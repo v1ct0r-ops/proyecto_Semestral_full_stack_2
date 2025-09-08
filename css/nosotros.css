@@ -1,3 +1,10 @@
+/* --- Contenedor general para limitar el ancho del main --- */
+.contenedor-nosotros {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    background: transparent;
+}
 /* --- DESARROLLADORES --- */
 .desarrolladores {
     background: #181818;
@@ -86,10 +93,10 @@ body {
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(57,255,20,0.08);
 }
-.mision h2, .vision h2, .valores h2, .impacto h2 {
-    font-family: 'Orbitron', Arial, sans-serif;
-    color: #1E90FF;
-    margin-top: 0;
+    .mision h2, .vision h2, .valores h2, .impacto h2 {
+        font-family: 'Orbitron', Arial, sans-serif;
+        color: #fff;
+        margin-top: 0;
 }
 .valores ul {
     color: #D3D3D3;

@@ -1,3 +1,11 @@
+/* --- Contenedor general para limitar el ancho del main --- */
+.contenedor-blogs {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    background: transparent;
+    
+}
 html, body {
     height: 100%;
     margin: 0;
@@ -86,6 +94,7 @@ body {
     font-size: 2.2rem;
     margin-bottom: 2rem;
     text-align: center;
+    
 }
 .blog-list {
     display: flex;
@@ -227,6 +236,9 @@ body {
     background-size: cover;
     background-position: center;
     
+}
+.contenedor-blogs h1 {
+    margin-left: 20%; /* Puedes ajustar el valor según lo que necesites */
 }
 
 /* --- RESPONSIVE --- */
