@@ -59,19 +59,33 @@ correo.addEventListener("input", validarFormulario);
 contenido.addEventListener("input", validarFormulario);
 
 formulario.addEventListener("submit", function(e) {
-  // Valida correo antes de enviar
   if (!validarUsuario(correo.value) || !validarNombre(nombre.value) || !validarContenidoSeguro(contenido.value)) {
-    e.preventDefault(); // Detiene el envío si no es válido
+    e.preventDefault();
     return;
   }
-  // Si pasa la validación, muestra el query string
+  // Guarda mensaje en localStorage
+  const mensaje = {
+    nombre: nombre.value,
+    correo: correo.value,
+    contenido: contenido.value,
+    fecha: new Date().toLocaleString()
+  };
+  let historial = JSON.parse(localStorage.getItem("mensajesContacto")) || [];
+  historial.push(mensaje);
+  localStorage.setItem("mensajesContacto", JSON.stringify(historial));
+
+  //  en consola los datos enviados
+  console.log("Nombre:", nombre.value);
+  console.log("Correo:", correo.value);
+  console.log("Contenido:", contenido.value);
   const formData = new FormData(formulario);
   const urlParam = new URLSearchParams(formData);
   const queryString = urlParam.toString();
-  alert(queryString);
-  
-  e.preventDefault(); 
+  console.log("Query string enviado:", queryString);
+  alert("¡Mensaje enviado correctamente!");
+  formulario.reset();
+  validarFormulario();
+  e.preventDefault();
 });
-
 
 validarFormulario();
