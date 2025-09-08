@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo producto</title>
+</head>
+
+<body>
+    <div class="principal-producto">
+        <a href="./HomeAdminstrador-1.html" class="volverAlHomeAdministrador">Volver al home</a>
+        <nav class="navegacion-producto">
+            <h1>Label-up Gamer</h1>
+            <ul>
+                <li><a href="#">Dashboard</a></li>
+                <li><a href="./ProductoAdministrador-2.html">Producto</a></li>
+                <li><a href="#">Inventario</a></li>
+                <li><a href="#">Usuario</a></li>
+            </ul>
+            <ul>
+                <li><a href="#">Configuración</a></li>
+                <li><a href="#">Añadir un perfil</a></li>
+                <li><a href="#">Buscar</a></li>
+                <li><a href="#">Ayuda</a></li>
+                <li><a href="#">Perfil</a></li>
+            </ul>
+        </nav>
+        <header>
+            <h1>PRODUCTOS</h1>
+            <!-- Aquí puedes poner el ícono de notificación -->
+        </header>
+        <main class="contenido-principal-producto">
+            <section class="contenido-producto">
+                <h2>Agregar Nuevo Producto</h2>
+                <form action="#" method="post" enctype="multipart/form-data">
+                    <label for="codigo">Codigo:</label>
+                    <input type="text" id="codigo" name="codigo" required>
+
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" id="nombre" name="nombre" required>
+
+                    <label for="descripcion">Descripción:</label>
+                    <textarea id="descripcion" name="descripcion" required></textarea>
+
+                    <label for="precio">Precio:</label>
+                    <input type="number" id="precio" name="precio" step="0.01" required>
+
+                    <label for="stock">Stock:</label>
+                    <input type="number" id="stock" name="stock" required>
+
+                    <label for="categoria">Categoría:</label>
+                    <input type="text" id="categoria" name="categoria" required>
+
+                    <label for="imagen">Imagen:</label>
+                    <input type="file" id="imagen" name="imagen">
+
+                    <button type="submit">Agregar Producto</button>
+                </form>
+            </section>
+        </main>
+</body>
+
+</html>
