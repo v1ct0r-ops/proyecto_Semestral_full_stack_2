@@ -73,7 +73,7 @@ body {
 }
 
 .main-blogs {
-    max-width: 900px;
+    width: 90%;
     margin: 2rem auto;
     padding: 2rem;
     background: rgba(20,20,20,0.95);
