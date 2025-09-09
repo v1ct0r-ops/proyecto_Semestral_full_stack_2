@@ -514,120 +514,7 @@ function renderMisCompras(){
 
 
 
-/* PEDIDOS */
 
-function estadoPedido(id){
-  const p = obtenerPedidos().find(x => x.id === id);
-  return p ? p.estado : "pendiente";
-}
-
-function renderPedidos(){
-  const cont = document.getElementById("listaPedidos");
-  const filtro = document.getElementById("filtroPedidos");
-  if (!cont || !filtro) return;
-
-  const estado = filtro.value; // "", "pendiente", "despachado", "cancelado" (si agregás esta opción)
-  let arr = obtenerPedidos();
-
-  arr.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
-  if (estado) arr = arr.filter(p => p.estado === estado);
-
-  if (!arr.length){
-    cont.innerHTML = `<p class="info">No hay pedidos para este filtro.</p>`;
-    return;
-  }
-
-  cont.innerHTML = arr.map(p => {
-    const fecha = new Date(p.fecha).toLocaleString("es-CL");
-    const badge = p.estado === "pendiente" 
-      ? `<a class="btn peligro" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Pendiente</a>`
-      : p.estado === "despachado"
-      ? `<a class="btn exito" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Despachado</a>`
-      : `<a class="btn secundario" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Cancelado</a>`;
-
-    return `
-      <article class="tarjeta">
-        <div class="contenido">
-          <h4>${p.id}</h4>
-          <p class="info">${fecha} · ${p.comprador.nombres} ${p.comprador.apellidos} (${p.comprador.correo})</p>
-          <p><small>Envío: ${p.envio.direccion}, ${p.envio.comuna}, ${p.envio.region}</small></p>
-          <p><strong>Total:</strong> ${formatoPrecio(p.total)}</p>
-          <div>${badge} <a class="btn secundario" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Ver detalle</a></div>
-        </div>
-      </article>`;
-  }).join("");
-}
-
-function cargarPedidoDetalle(){
-  if (!location.pathname.endsWith("/admin/pedidos-detalles.html")) return;
-  const params = new URLSearchParams(location.search);
-  const id = params.get("id");
-  const cont = document.getElementById("detallePedido");
-  const titulo = document.getElementById("tituloPedido");
-  const btn = document.getElementById("btnMarcarDespachado");
-  if (!id || !cont || !btn) return;
-
-  const pedidos = obtenerPedidos();
-  const ped = pedidos.find(p => p.id === id);
-  if (!ped){ cont.innerHTML = `<p class="info">Pedido no encontrado.</p>`; btn.style.display="none"; return; }
-
-  if (titulo) titulo.textContent = `Pedido ${ped.id} — ${ped.estado.toUpperCase()}`;
-
-  const prods = obtener("productos", []);
-  const filas = ped.items.map(it=>{
-    const p = prods.find(x=>x.codigo===it.codigo);
-    const nombre = p ? p.nombre : it.codigo;
-    return `<div class="item-carrito">
-      <div><strong>${nombre}</strong><br><small>${it.codigo}</small></div>
-      <div>${formatoPrecio(it.precio)}</div>
-      <div>x${it.cantidad}</div>
-    </div>`;
-  }).join("");
-
-  cont.innerHTML = `
-    <article class="tarjeta">
-      <div class="contenido">
-        <p><strong>Fecha:</strong> ${new Date(ped.fecha).toLocaleString("es-CL")}</p>
-        <p><strong>Cliente:</strong> ${ped.comprador.nombres} ${ped.comprador.apellidos} — ${ped.comprador.correo}</p>
-        <p><strong>Envío:</strong> ${ped.envio.direccion}, ${ped.envio.comuna}, ${ped.envio.region}</p>
-        <p><strong>Total:</strong> ${formatoPrecio(ped.total)}</p>
-        <h4>Ítems</h4>
-        ${filas}
-      </div>
-    </article>
-  `;
-
-  const actualizarBoton = ()=>{
-    if (ped.estado === "pendiente") {
-      btn.textContent = "Marcar como despachado";
-      btn.className = "btn exito";
-      btn.disabled = false;
-      btn.style.display = "";
-    } else if (ped.estado === "despachado") {
-      btn.textContent = "Pedido despachado";
-      btn.className = "btn secundario";
-      btn.disabled = true;
-      btn.style.display = "";
-    } else { // cancelado
-      btn.textContent = "Pedido cancelado";
-      btn.className = "btn secundario";
-      btn.disabled = true;
-      btn.style.display = "";
-    }
-  };
-  actualizarBoton();
-
-  if (!btn.dataset.bind){
-    btn.addEventListener("click", ()=>{
-      if (ped.estado !== "pendiente") return;
-      ped.estado = "despachado";
-      guardarPedidos(pedidos);
-      actualizarBoton();
-      alert("Pedido marcado como despachado.");
-    });
-    btn.dataset.bind = "1";
-  }
-}
 
 
 
@@ -1146,6 +1033,403 @@ function cargarDetalle(){
   prepararFormResena(codigo);
 }
 
+// ========= Admin / Listados =========
+
+function popularCategorias(){
+  const sel      = document.getElementById("filtroCategoria");
+  const selAdmin = document.getElementById("categoriaProducto");
+
+  // Preferimos la lista base de datos.js; si no existe, derivamos de los productos guardados
+  const baseCats  = Array.isArray(window.categorias) ? window.categorias : [];
+  const derivadas = Array.from(new Set(obtener("productos", []).map(p=>p.categoria).filter(Boolean)));
+  const cats      = (baseCats.length ? baseCats : derivadas).sort();
+
+  if (sel){
+    sel.innerHTML = '<option value="">Todas las categorías</option>' +
+                    cats.map(c=>`<option>${c}</option>`).join("");
+  }
+  if (selAdmin){
+    selAdmin.innerHTML = cats.map(c=>`<option>${c}</option>`).join("");
+  }
+}
+
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  // Guard de admin
+  if (location.pathname.includes("/admin/")) {
+    const u = usuarioActual();
+    const esAdmin     = () => u && u.tipoUsuario === "admin";
+    const esVendedor  = () => u && u.tipoUsuario === "vendedor";
+
+    // Bloquear acceso si no es admin ni vendedor
+    if (!u || (!esAdmin() && !esVendedor())) {
+      alert("Acceso restringido.");
+      window.location.href = "../index.html";
+      return;
+    }
+
+    // Si es vendedor, bloquear rutas prohibidas y devolver a admin.html
+    const path    = location.pathname.toLowerCase();
+    const archivo = path.split("/").pop(); // ej: "usuarios.html"
+    const prohibidasVendedor = new Set([
+      "usuarios.html",
+      "usuario-nuevo.html",
+      "producto-nuevo.html",
+      "nuevo-producto.html",
+    ]);
+    if (esVendedor() && prohibidasVendedor.has(archivo)) {
+      alert("Acceso no permitido para tu rol.");
+      window.location.href = "admin.html";
+      return;
+    }
+
+    // Ajustes de UI según rol:
+    // 1) Vendedor NO ve "Usuarios" en el menú lateral
+    const linkUsuarios = document.querySelector('.menu-admin a[href="usuarios.html"]');
+    if (esVendedor() && linkUsuarios) linkUsuarios.remove();
+
+    // 2) Vendedor NO ve el botón "Nuevo producto" (asegúrate de que el botón tenga id="btnNuevoProducto")
+    const btnNuevo = document.getElementById("btnNuevoProducto");
+    if (esVendedor() && btnNuevo) btnNuevo.style.display = "none";
+
+    // 3) Vendedor NO ve el KPI de Usuarios (asegúrate de que el wrapper tenga id="kpiUsuariosBox")
+    const kpiUsuariosBox = document.getElementById("kpiUsuariosBox");
+    if (esVendedor() && kpiUsuariosBox) kpiUsuariosBox.style.display = "none";
+
+    // 4) Accesos rápidos solo para admin
+    if (esVendedor()) {
+      document.querySelectorAll(".solo-admin").forEach(el => el.remove());
+    }
+
+    // 5) Título dinámico
+    const titulo = document.querySelector("title");
+    if (titulo) titulo.textContent = esAdmin()
+      ? "Administrador | Level-Up Gamer"
+      : "Vendedor | Level-Up Gamer";
+  }
+
+  popularCategorias();
+
+  // KPI
+  if(document.getElementById("kpiProductos")){
+    document.getElementById("kpiProductos").textContent = obtener("productos", []).length;
+  }
+  if(document.getElementById("kpiUsuarios")){
+    document.getElementById("kpiUsuarios").textContent = obtener("usuarios", []).length;
+  }
+  if (document.getElementById("kpiPedidos")){
+  const pendientes = obtenerPedidos().filter(p=>p.estado==="pendiente").length;
+  document.getElementById("kpiPedidos").textContent = pendientes;
+}
+
+
+  // Tabla productos
+  const cuerpo = document.getElementById("tablaProductos");
+  if (cuerpo){
+    const u = usuarioActual();
+    const esAdmin = !!(u && u.tipoUsuario === "admin");
+
+    const prods = obtener("productos", []);
+
+    const thAcciones = document.getElementById("thAcciones");
+    if (thAcciones) thAcciones.style.display = esAdmin ? "" : "none";
+
+    cuerpo.innerHTML = prods.map(p=>`
+      <tr>
+        <td>${p.codigo}</td>
+        <td>${p.nombre}</td>
+        <td>${p.categoria}</td>
+        <td>${formatoPrecio(p.precio)}</td>
+        <td>${p.stock ?? "—"}</td>
+        <td style="${esAdmin ? "" : "display:none"}">
+          <a class="btn secundario" href="editar-producto.html?codigo=${encodeURIComponent(p.codigo)}">Editar</a>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+
+  // Nuevo producto
+  const formProd = document.getElementById("formProducto");
+  if(formProd){
+    formProd.addEventListener("submit",(e)=>{
+      e.preventDefault();
+      const codigo = document.getElementById("codigoProducto").value.trim();
+      const nombre = document.getElementById("nombreProducto").value.trim();
+      const descripcion = document.getElementById("descripcionProducto").value.trim();
+      const detalles = document.getElementById("detallesProducto")?.value.trim() || "";
+      const precio = parseFloat(document.getElementById("precioProducto").value);
+      const stock = parseInt(document.getElementById("stockProducto").value,10);
+      const stockCrit = document.getElementById("stockCriticoProducto").value ? parseInt(document.getElementById("stockCriticoProducto").value,10) : null;
+      const categoria = document.getElementById("categoriaProducto").value;
+      const imagen = document.getElementById("imagenProducto").value.trim();
+
+      // Validaciones requeridas por anexos
+      let ok=true;
+      const setErr = (id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; if(txt) ok=false; };
+      setErr("errCodigoProducto", codigo.length>=3? "": "Mínimo 3 caracteres.");
+      setErr("errNombreProducto", nombre && nombre.length<=100? "": "Requerido (máx 100).");
+      setErr("errPrecioProducto", isNaN(precio)||precio<0? "Precio inválido (>=0)": "");
+      setErr("errStockProducto", isNaN(stock)||stock<0||!Number.isInteger(stock)? "Stock entero >=0": "");
+      setErr("errCategoriaProducto", categoria? "": "Seleccioná una categoría.");
+      if(!ok) return;
+
+      const prods = obtener("productos", []);
+      if(prods.some(p=>p.codigo.toUpperCase()===codigo.toUpperCase())){
+        document.getElementById("errCodigoProducto").textContent="El código ya existe."; return;
+      }
+      prods.push({codigo, nombre, descripcion, detalles, precio, stock, stockCritico:stockCrit, categoria, imagen});
+      guardar("productos", prods);
+      document.getElementById("msgProducto").textContent = "Producto guardado.";
+      formProd.reset();
+    });
+  }
+
+  // Tabla usuarios
+  const cuerpoU = document.getElementById("tablaUsuarios");
+  if(cuerpoU){
+    const us = obtener("usuarios", []);
+    cuerpoU.innerHTML = us.map(u=>`<tr><td>${u.run}</td><td>${u.nombres} ${u.apellidos}</td><td>${u.correo}</td><td>${u.tipoUsuario}</td></tr>`).join("");
+  }
+
+  // Nuevo usuario (admin)
+  const formUA = document.getElementById("formUsuarioAdmin");
+  if(formUA){
+    formUA.addEventListener("submit",(e)=>{
+      e.preventDefault();
+      const run = document.getElementById("runAdmin").value.trim();
+      const nombres = document.getElementById("nombresAdmin").value.trim();
+      const apellidos = document.getElementById("apellidosAdmin").value.trim();
+      const correo = document.getElementById("correoAdmin").value.trim();
+      const tipoUsuario = document.getElementById("tipoUsuarioAdmin").value;
+      const direccion = document.getElementById("direccionAdmin").value.trim();
+      let ok=true;
+      const setErr = (id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; if(txt) ok=false; };
+      setErr("errRunAdmin", validarRun(run)? "": "RUN inválido.");
+      setErr("errCorreoAdmin", esCorreoPermitido(correo)&&correo.length<=100? "": "Correo no permitido.");
+      if(!nombres) ok=false;
+      if(!apellidos) ok=false;
+      if(!direccion || direccion.length>300) ok=false;
+      const users = obtener("usuarios", []);
+      if(users.some(u=>u.run.toUpperCase()===run.toUpperCase())){ setErr("errRunAdmin","RUN ya existe."); }
+      if(users.some(u=>u.correo.toLowerCase()===correo.toLowerCase())){ setErr("errCorreoAdmin","Correo ya existe."); }
+      if(!ok) return;
+      users.push({run,nombres,apellidos,correo,fechaNacimiento:"",tipoUsuario,region:"",comuna:"",direccion,pass:"admin",descuentoDuoc:correo.endsWith("@duoc.cl"),puntosLevelUp:0,codigoReferido:""});
+      guardar("usuarios", users);
+      document.getElementById("msgUsuarioAdmin").textContent = "Usuario guardado.";
+      formUA.reset();
+    });
+  }
+});
+
+// === Editar Producto (solo admin) ===
+function inicializarEditarProducto(){
+  if (!location.pathname.endsWith("/admin/editar-producto.html")) return;
+
+  const u = usuarioActual();
+  if (!u || u.tipoUsuario !== "admin"){
+    alert("Acceso no permitido.");
+    window.location.href = "admin.html";
+    return;
+  }
+
+  // inputs
+  const iCod   = document.getElementById("e_codigoProducto");
+  const iNom   = document.getElementById("e_nombreProducto");
+  const iDesc  = document.getElementById("e_descripcionProducto");
+  const iDet   = document.getElementById("e_detallesProducto");
+  const iPrecio= document.getElementById("e_precioProducto");
+  const iStock = document.getElementById("e_stockProducto");
+  const iCrit  = document.getElementById("e_stockCriticoProducto");
+  const iCat   = document.getElementById("e_categoriaProducto");
+  const iImg   = document.getElementById("e_imagenProducto");
+  const form   = document.getElementById("formEditarProducto");
+  const msg    = document.getElementById("msgEditarProducto");
+
+  // categorías
+  // reutiliza tu popularCategorias pero con select específico:
+  (function popularCatsEditar(){
+    const baseCats  = Array.isArray(window.categorias) ? window.categorias : [];
+    const derivadas = Array.from(new Set(obtener("productos", []).map(p=>p.categoria).filter(Boolean)));
+    const cats      = (baseCats.length ? baseCats : derivadas).sort();
+    iCat.innerHTML  = cats.map(c=>`<option>${c}</option>`).join("");
+  })();
+
+  // producto por querystring
+  const params = new URLSearchParams(location.search);
+  const codigo = params.get("codigo");
+  const productos = obtener("productos", []);
+  const prod = productos.find(p => p.codigo === codigo);
+
+  if (!prod){
+    alert("Producto no encontrado.");
+    window.location.href = "productos.html";
+    return;
+  }
+
+  // setear valores
+  iCod.value    = prod.codigo;
+  iNom.value    = prod.nombre || "";
+  iDesc.value   = prod.descripcion || "";
+  iDet.value    = prod.detalles || "";
+  iPrecio.value = Number(prod.precio ?? 0);
+  iStock.value  = Number(prod.stock ?? 0);
+  iCrit.value   = prod.stockCritico ?? "";
+  iCat.value    = prod.categoria || (iCat.options[0]?.value || "");
+  iImg.value    = prod.imagen || "";
+
+  // guardar
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+
+    // validaciones simples
+    let ok = true;
+    const setErr = (id, txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; if(txt) ok=false; };
+
+    const nombre = iNom.value.trim();
+    const precio = parseFloat(iPrecio.value);
+    const stock  = parseInt(iStock.value, 10);
+    const categoria = iCat.value;
+
+    setErr("errENombre", nombre && nombre.length<=100 ? "" : "Requerido (máx 100).");
+    setErr("errEPrecio", (!isNaN(precio) && precio>=0) ? "" : "Precio inválido (>=0).");
+    setErr("errEStock",  (!isNaN(stock)  && stock>=0  && Number.isInteger(stock)) ? "" : "Stock entero >=0.");
+    setErr("errECategoria", categoria ? "" : "Seleccioná una categoría.");
+    if (!ok) return;
+
+    // aplicar cambios
+    prod.nombre       = nombre;
+    prod.descripcion  = iDesc.value.trim();
+    prod.detalles     = iDet.value.trim();
+    prod.precio       = precio;
+    prod.stock        = stock;
+    prod.stockCritico = iCrit.value ? parseInt(iCrit.value,10) : null;
+    prod.categoria    = categoria;
+    prod.imagen       = iImg.value.trim();
+
+    guardar("productos", productos);
+
+    if (msg) msg.textContent = "Cambios guardados.";
+    setTimeout(()=>{ if(msg) msg.textContent=""; }, 1200);
+  });
+}
+
+
+/* PEDIDOS */
+
+function estadoPedido(id){
+  const p = obtenerPedidos().find(x => x.id === id);
+  return p ? p.estado : "pendiente";
+}
+
+function renderPedidos(){
+  const cont = document.getElementById("listaPedidos");
+  const filtro = document.getElementById("filtroPedidos");
+  if (!cont || !filtro) return;
+
+  const estado = filtro.value; // "", "pendiente", "despachado", "cancelado" (si agregás esta opción)
+  let arr = obtenerPedidos();
+
+  arr.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
+  if (estado) arr = arr.filter(p => p.estado === estado);
+
+  if (!arr.length){
+    cont.innerHTML = `<p class="info">No hay pedidos para este filtro.</p>`;
+    return;
+  }
+
+  cont.innerHTML = arr.map(p => {
+    const fecha = new Date(p.fecha).toLocaleString("es-CL");
+    const badge = p.estado === "pendiente" 
+      ? `<a class="btn peligro" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Pendiente</a>`
+      : p.estado === "despachado"
+      ? `<a class="btn exito" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Despachado</a>`
+      : `<a class="btn secundario" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Cancelado</a>`;
+
+    return `
+      <article class="tarjeta">
+        <div class="contenido">
+          <h4>${p.id}</h4>
+          <p class="info">${fecha} · ${p.comprador.nombres} ${p.comprador.apellidos} (${p.comprador.correo})</p>
+          <p><small>Envío: ${p.envio.direccion}, ${p.envio.comuna}, ${p.envio.region}</small></p>
+          <p><strong>Total:</strong> ${formatoPrecio(p.total)}</p>
+          <div>${badge} <a class="btn secundario" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Ver detalle</a></div>
+        </div>
+      </article>`;
+  }).join("");
+}
+
+function cargarPedidoDetalle(){
+  if (!location.pathname.endsWith("/admin/pedidos-detalles.html")) return;
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  const cont = document.getElementById("detallePedido");
+  const titulo = document.getElementById("tituloPedido");
+  const btn = document.getElementById("btnMarcarDespachado");
+  if (!id || !cont || !btn) return;
+
+  const pedidos = obtenerPedidos();
+  const ped = pedidos.find(p => p.id === id);
+  if (!ped){ cont.innerHTML = `<p class="info">Pedido no encontrado.</p>`; btn.style.display="none"; return; }
+
+  if (titulo) titulo.textContent = `Pedido ${ped.id} — ${ped.estado.toUpperCase()}`;
+
+  const prods = obtener("productos", []);
+  const filas = ped.items.map(it=>{
+    const p = prods.find(x=>x.codigo===it.codigo);
+    const nombre = p ? p.nombre : it.codigo;
+    return `<div class="item-carrito">
+      <div><strong>${nombre}</strong><br><small>${it.codigo}</small></div>
+      <div>${formatoPrecio(it.precio)}</div>
+      <div>x${it.cantidad}</div>
+    </div>`;
+  }).join("");
+
+  cont.innerHTML = `
+    <article class="tarjeta">
+      <div class="contenido">
+        <p><strong>Fecha:</strong> ${new Date(ped.fecha).toLocaleString("es-CL")}</p>
+        <p><strong>Cliente:</strong> ${ped.comprador.nombres} ${ped.comprador.apellidos} — ${ped.comprador.correo}</p>
+        <p><strong>Envío:</strong> ${ped.envio.direccion}, ${ped.envio.comuna}, ${ped.envio.region}</p>
+        <p><strong>Total:</strong> ${formatoPrecio(ped.total)}</p>
+        <h4>Ítems</h4>
+        ${filas}
+      </div>
+    </article>
+  `;
+
+  const actualizarBoton = ()=>{
+    if (ped.estado === "pendiente") {
+      btn.textContent = "Marcar como despachado";
+      btn.className = "btn exito";
+      btn.disabled = false;
+      btn.style.display = "";
+    } else if (ped.estado === "despachado") {
+      btn.textContent = "Pedido despachado";
+      btn.className = "btn secundario";
+      btn.disabled = true;
+      btn.style.display = "";
+    } else { // cancelado
+      btn.textContent = "Pedido cancelado";
+      btn.className = "btn secundario";
+      btn.disabled = true;
+      btn.style.display = "";
+    }
+  };
+  actualizarBoton();
+
+  if (!btn.dataset.bind){
+    btn.addEventListener("click", ()=>{
+      if (ped.estado !== "pendiente") return;
+      ped.estado = "despachado";
+      guardarPedidos(pedidos);
+      actualizarBoton();
+      alert("Pedido marcado como despachado.");
+    });
+    btn.dataset.bind = "1";
+  }
+}
+
 
 /* =============== INICIALIZACIÓN =============== */
 document.addEventListener("DOMContentLoaded", () => {
@@ -1209,8 +1493,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Formularios
   inicializarRegistro();
   inicializarLogin();
-
   inicializarPerfil();
+  inicializarEditarProducto();
 
   // Detalle de producto
   cargarDetalle();
