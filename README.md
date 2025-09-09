@@ -43,13 +43,11 @@ proyecto_Semestral_full_stack_2/
 
 - Registro y autenticación de usuarios
 - Visualización y filtrado de catálogo de productos
-- Carrito de compras persistente (localStorage)
-- Gestión de productos (CRUD, solo administrador)
+- Carrito de compras persistente 
+- Gestión de productos (solo administrador)
 - Publicación y visualización de blogs/novedades
 - Formulario de contacto validado y persistente (localStorage)
 - Panel de administración exclusivo
-- Edición de perfil de usuario (pendiente)
-- Recuperación de contraseña (pendiente)
 
 
 ## Detalles Técnicos
@@ -79,13 +77,7 @@ proyecto_Semestral_full_stack_2/
 - Uso de CSS modular para mantener el código organizado y facilitar el mantenimiento
 - Responsive design para adaptarse a distintos dispositivos
 
-### Ejecución del Proyecto
-1. Clona el repositorio:
-	```
-	git clone <url-del-repositorio>
-	```
-2. Abre la carpeta en Visual Studio Code.
-3. Abre `index.html` con Live Server o tu navegador preferido.
+
 
 ### Notas de Desarrollo
 - El proyecto está preparado para ser extendido fácilmente (nuevas vistas, scripts o estilos)
@@ -93,15 +85,6 @@ proyecto_Semestral_full_stack_2/
 
 ---
 Desarrollado por el equipo Level-Up Gamer — 2025.
-
-## Instalación y Ejecución
-
-1. Clona el repositorio:
-	```
-	git clone <url-del-repositorio>
-	```
-2. Abre la carpeta en Visual Studio Code.
-3. Abre `index.html` con Live Server o tu navegador preferido.
 
 ## Créditos
 
