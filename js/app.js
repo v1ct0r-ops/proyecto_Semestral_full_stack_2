@@ -11,8 +11,8 @@ function esVendedor(){
   const u=usuarioActual(); return !!(u && u.tipoUsuario==="vendedor"); }
 
 /* =============== Primera carga =============== */
-if (!localStorage.getItem("productos") && Array.isArray(window.productosBase)) {
-  guardar("productos", window.productosBase);
+if (!localStorage.getItem("productos") && Array.isArray(productosBase)) {
+  guardar("productos", productosBase);
 }
 if (!localStorage.getItem("usuarios")) guardar("usuarios", []);
 if (!localStorage.getItem("carrito"))  guardar("carrito", []);
@@ -105,6 +105,38 @@ function inicializarRegistro(){
     if (msg) msg.textContent = "¡Cuenta creada! Ahora podés ingresar.";
     form.reset();
   });
+}
+
+/* =============== VALIDACIONES (registro.html) =============== */
+const dominiosPermitidos = ["duoc.cl","profesor.duoc.cl","gmail.com"];
+function esCorreoPermitido(correo){
+  const m = (correo||"").toLowerCase().match(/^[\w.+-]+@([\w.-]+)$/);
+  if(!m) return false;
+  const dominio = m[1];
+  return dominiosPermitidos.some(d => dominio.endsWith(d));
+}
+function validarRun(run){
+  const limpio = (run||"").toUpperCase().replace(/\.|-/g,"");
+  if(limpio.length < 7 || limpio.length > 9) return false;
+  const cuerpo = limpio.slice(0,-1);
+  const dv = limpio.slice(-1);
+  let suma = 0, multiplo = 2;
+  for(let i=cuerpo.length-1;i>=0;i--){
+    suma += parseInt(cuerpo[i],10) * multiplo;
+    multiplo = multiplo === 7 ? 2 : multiplo+1;
+  }
+  const resto = 11 - (suma % 11);
+  const dvCalc = resto === 11 ? "0" : (resto === 10 ? "K" : String(resto));
+  return dv === dvCalc;
+}
+function esMayorDe18(fechaStr){
+  const n = new Date(fechaStr);
+  if(isNaN(n)) return false;
+  const hoy = new Date();
+  let edad = hoy.getFullYear()-n.getFullYear();
+  const m = hoy.getMonth()-n.getMonth();
+  if(m<0 || (m===0 && hoy.getDate()<n.getDate())) edad--;
+  return edad >= 18;
 }
 
 
@@ -201,7 +233,7 @@ function renderDestacados(){
     </article>
   `).join("");
 
-  // AGREGAR LOS PRODUCTOS AL CARRITO
+  // Delegación: un solo listener permanente
   if (!cont.dataset.bind) {
     cont.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-agregar]");
@@ -215,11 +247,7 @@ function renderDestacados(){
 
 /* =============== CARRITO =============== */
 function obtenerCarrito(){ return obtener("carrito", []); }
-function guardarCarrito(c){
-  guardar("carrito", c);
-  actualizarContadorCarrito();
-  renderCarrito(); 
-}
+function guardarCarrito(c){ guardar("carrito", c); actualizarContadorCarrito(); renderCarrito(); }
 function agregarAlCarrito(codigo, cantidad=1){
   const prods = obtener("productos", []);
   const prod = prods.find(p=>p.codigo===codigo);
@@ -229,36 +257,52 @@ function agregarAlCarrito(codigo, cantidad=1){
   const i = carrito.findIndex(it=>it.codigo===codigo);
   if(i>=0) carrito[i].cantidad += cantidad;
   else carrito.push({codigo, cantidad});
-
   guardarCarrito(carrito);
 }
-function actualizarContadorCarrito(){
-  const total = obtenerCarrito().reduce((sum,it)=> sum + (Number(it.cantidad)||0), 0);
-  const el = document.getElementById("contadorCarrito");
-  if(el) el.textContent = total;
+function quitarDelCarrito(codigo){
+  guardarCarrito(obtenerCarrito().filter(it=>it.codigo!==codigo));
+}
+function cambiarCantidad(codigo, nuevaCant){
+  const c = obtenerCarrito();
+  const i = c.findIndex(it=>it.codigo===codigo);
+  if(i>=0){ c[i].cantidad = Math.max(1, parseInt(nuevaCant||"1",10)); }
+  guardarCarrito(c);
 }
 function renderCarrito(){
   const cont = document.getElementById("listaCarrito");
   if(!cont) return;
   const carrito = obtenerCarrito();
   const prods = obtener("productos", []);
-  let total = 0;
-
+  let total = 0, totalSinDesc = 0;
   cont.innerHTML = carrito.map(it=>{
     const p = prods.find(x=>x.codigo===it.codigo);
     if(!p) return "";
-    const subtotal = p.precio * it.cantidad;
-    total += subtotal;
+    const precio = precioConDescuento(p.precio);
+    total += precio * it.cantidad;
+    totalSinDesc += p.precio * it.cantidad;
     return `<div class="item-carrito">
       <div><strong>${p.nombre}</strong><br><small>${p.codigo}</small></div>
-      <div>${formatoPrecio(p.precio)}</div>
-      <div>x${it.cantidad}</div>
-      <div>${formatoPrecio(subtotal)}</div>
+      <div>${formatoPrecio(precio)}</div>
+      <div>
+        <input type="number" min="1" value="${it.cantidad}" onchange="cambiarCantidad('${p.codigo}', this.value)">
+        <button class="btn secundario" onclick="quitarDelCarrito('${p.codigo}')">Quitar</button>
+      </div>
     </div>`;
   }).join("");
 
+  const u = usuarioActual();
+  if(document.getElementById("textoDescuento")){
+    const hayDuoc = !!(u && u.correo?.toLowerCase().endsWith("@duoc.cl"));
+    document.getElementById("textoDescuento").classList.toggle("oculto", !(hayDuoc && totalSinDesc>total));
+    if(hayDuoc) document.getElementById("montoDescuento").textContent = "- " + formatoPrecio(totalSinDesc-total);
+  }
   const totalEl = document.getElementById("totalCarrito");
   if(totalEl) totalEl.textContent = formatoPrecio(total);
+}
+function actualizarContadorCarrito(){
+  const total = obtenerCarrito().reduce((sum,it)=> sum + (Number(it.cantidad)||0), 0);
+  const el = document.getElementById("contadorCarrito");
+  if(el) el.textContent = total;
 }
 
 /* PANELES */
@@ -272,18 +316,43 @@ function inicializarMenuLateral(){
   const lista = document.getElementById("menuLista");
   if (!btn || !panel || !navDesk || !lista) return;
 
-  // Clonar enlaces
+  // reconstruir solo una vez
   if (!lista.dataset.clonado) {
     lista.innerHTML = "";
+
+    // 1) Si hay usuario, agregamos primero "Mi cuenta" y "Salir" (solo móvil)
+    const u = usuarioActual();
+    if (u) {
+      const miCuenta = document.createElement("a");
+      miCuenta.href = "#";
+      miCuenta.id = "linkMiCuentaMov";
+      miCuenta.textContent = "Mi cuenta";
+      lista.appendChild(miCuenta);
+
+    }
+
+    // 2) Clonamos los enlaces del nav de escritorio (sin IDs)
     navDesk.querySelectorAll("a").forEach(a => {
-      const nuevo = document.createElement("a");
-      nuevo.href = a.getAttribute("href");
-      nuevo.textContent = a.textContent.trim() || a.getAttribute("href");
+      if (a.classList.contains("oculto")) return; // saltamos ocultos
+      if ((a.id||"").toLowerCase() === "linksalir") return; // no duplicar salir
+      const nuevo = a.cloneNode(true);
+      nuevo.removeAttribute("id"); // evitar IDs duplicados
       lista.appendChild(nuevo);
     });
+
+    
+    if (u) {
+      const salirMov = document.createElement("a");
+      salirMov.href = "#";
+      salirMov.id = "linkSalirMov";
+      salirMov.textContent = "Salir";
+      lista.appendChild(salirMov);
+    }
+
     lista.dataset.clonado = "1";
   }
 
+  // abrir / cerrar menú
   const abrir = () => {
     document.body.classList.add("menu-abierto");
     btn.setAttribute("aria-expanded","true");
@@ -307,8 +376,39 @@ function inicializarMenuLateral(){
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && document.body.classList.contains("menu-abierto")) cerrar();
     });
-    lista.addEventListener("click", (e) => { if (e.target.closest("a")) cerrar(); });
+    lista.addEventListener("click", (e) => {
+      const esLink = e.target.closest("a");
+      if (esLink) cerrar();
+    });
     btn.dataset.bind = "1";
+  }
+
+  // listeners de los enlaces móviles que agregamos
+  const linkMiCuentaMov = document.getElementById("linkMiCuentaMov");
+  if (linkMiCuentaMov && !linkMiCuentaMov.dataset.bind) {
+    linkMiCuentaMov.addEventListener("click", (e)=>{
+      e.preventDefault();
+      abrirPanelCuenta(); // abre el panel con los datos del usuario
+    });
+    linkMiCuentaMov.dataset.bind = "1";
+  }
+
+  const linkSalirMov = document.getElementById("linkSalirMov");
+  if (linkSalirMov && !linkSalirMov.dataset.bind) {
+    linkSalirMov.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("sesion");
+      actualizarNavegacion();
+      cerrar();
+
+      // Verificar si estamos dentro de /admin/
+      if (location.pathname.includes("/admin/")) {
+        window.location.href = "../index.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+    linkSalirMov.dataset.bind = "1";
   }
 }
 
@@ -319,6 +419,7 @@ function abrirPanelCuenta(){
   const cortina = document.getElementById("cortinaCuenta");
   if (!u || !panel || !cortina) return;
 
+  // Asegurar código y guardar por si no tenía
   asegurarCodigoReferido(u);
   guardarUsuarioActual(u);
 
@@ -334,7 +435,7 @@ function abrirPanelCuenta(){
   if (pts) pts.textContent = u.puntosLevelUp ?? 0;
   if (niv) niv.textContent = calcularNivel(u.puntosLevelUp || 0);
 
-  // FUNCION PARA COPIAR EL CODIGO DE REFERIDO
+  // Copiar
   const btnCopiar = document.getElementById("btnCopiarCodigo");
   if (btnCopiar && !btnCopiar.dataset.bind) {
     btnCopiar.addEventListener("click", ()=>{
@@ -374,7 +475,7 @@ function abrirPanelCuenta(){
       actualizarNavegacion();
       cerrar();
 
-      // REDIRECCION SEGUN USUARIO 
+      // Redirección según si estamos en admin o no
       if (location.pathname.includes("/admin/")) {
         window.location.href = "../index.html";
       } else {

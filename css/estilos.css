@@ -30,6 +30,8 @@ a{
   text-decoration:none;
 }
 
+/* NAV Y PANELES*/
+
 /* Encabezado */
 .encabezado{
   position:sticky;
@@ -90,7 +92,211 @@ a{
   display:none !important;
 }
 
-/* Hero */
+
+/* Menú lateral (telefono) */
+.btn-menu{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  width:40px;height:40px;
+  border:1px solid var(--borde);
+  border-radius:12px;
+  background:#101626;color:#eaeaea;
+}
+
+.btn-menu .icono-cerrar{
+  display:none;
+}
+
+/* Cuando el menú estA abierto, camabia el icono */
+body.menu-abierto .btn-menu .icono-menu{
+  display:none;
+}
+
+body.menu-abierto .btn-menu .icono-cerrar{
+  display:inline;
+}
+
+/* Panel lateral */
+.menu-lateral{
+  position:fixed; inset:0 auto 0 0;
+  width:min(85vw, 340px);
+  background:#0b0f16; border-right:1px solid var(--borde);
+  transform:translateX(-100%); transition:transform .28s ease;
+  z-index:60; overflow-y:auto;
+}
+
+.menu-cabecera{
+  padding:16px;
+  border-bottom:1px solid var(--borde);
+}
+
+.menu-lista{
+  display:flex; 
+  flex-direction:column; 
+  gap:6px; 
+  padding:10px 12px;
+}
+
+.menu-lista a{
+  padding:10px 12px; 
+  border-radius:10px; 
+  color:#cfd6ff;
+}
+
+.menu-lista a:hover{
+  background:#12182a; 
+  color:#fff;}
+
+/* Cortina */
+.cortina{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.55);
+  opacity:0; pointer-events:none; transition:opacity .25s ease;
+  z-index:50;
+}
+
+/* Estados abiertos */
+body.menu-abierto .menu-lateral{ 
+  transform:translateX(0); 
+}
+
+body.menu-abierto .cortina{ 
+  opacity:1; 
+  pointer-events:auto; 
+}
+
+body.menu-abierto{ 
+  overflow:hidden; 
+}
+
+/* Responsive: en movil se oculta el nav y muestra el boton */
+@media (max-width: 900px){
+  .btn-menu{ display:inline-flex; }
+  .navegacion{ display:none; }
+}
+
+/* Reducir movimiento */
+@media (prefers-reduced-motion:reduce){
+  *{
+    animation:none !important;
+    transition:none !important;
+  }
+}
+
+
+/* Botón de perfil (escritorio) */
+.perfil-desk {
+  display: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: #101626;
+  overflow: hidden;
+  cursor: pointer;
+}
+.perfil-desk img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (min-width: 901px) {
+  .perfil-desk { display: inline-block; }
+}
+
+/* Panel cuenta */
+.panel-cuenta {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(90vw, 360px);
+  background: #0b0f16;
+  border-left: 1px solid var(--borde);
+  transform: translateX(100%);
+  transition: transform .28s ease;
+  z-index: 70;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+.panel-cuenta--abierto {
+  transform: translateX(0);
+}
+.panel-cuenta__cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--borde);
+}
+.panel-cuenta__cerrar {
+  background: transparent;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  color: var(--texto);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.panel-cuenta__contenido {
+  padding: 14px 16px;
+  display: grid;
+  gap: 12px;
+}
+.panel-cuenta__avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  overflow: hidden;
+  margin: 4px 0 10px;
+}
+.panel-cuenta__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.panel-cuenta__bloque {
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 10px;
+  background: #0c0f15;
+}
+.panel-cuenta__ref {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-top: 6px;
+}
+.panel-cuenta__acciones {
+  display: flex;
+  gap: 8px;
+}
+
+/* Móvil: el panel entra desde la izquierda */
+@media (max-width: 900px) {
+  .panel-cuenta {
+    left: 0;
+    right: auto;
+    border-left: none;
+    border-right: 1px solid var(--borde);
+    transform: translateX(-100%);
+    width: min(90vw, 380px);
+  }
+  .panel-cuenta--abierto {
+    transform: translateX(0);
+  }
+}
+
+
+
+/* INDEX */
+
+.principal{
+  min-height:60vh
+}
+
 .hero{
   display:grid;
   grid-template-columns:1.2fr .8fr;
@@ -111,6 +317,8 @@ a{
   color:var(--texto-sec);
   max-width:680px;
 }
+
+/* BOTONES */
 
 .acciones{
   display:flex;
@@ -144,6 +352,11 @@ a{
 .btn.secundario:hover{
   background:#0f1628;
 }
+
+
+
+
+/* DESTACADOS */
 
 .destacados{
   margin: 0px 24px;
@@ -181,6 +394,8 @@ a{
   margin:8px 0 16px;
 }
 
+
+
 /* Beneficios */
 .beneficios{
   display:grid;
@@ -196,118 +411,72 @@ a{
   padding:14px;
 }
 
-/* Pie */
+
+
+/* FORMULARIOS */
+
+.formulario-contenedor{
+  max-width:760px;
+  margin:0 auto;
+  padding:16px
+}
+
+.formulario{
+  display:grid;
+  gap:12px
+}
+
+.formulario .fila.dos{
+  grid-template-columns:1fr 1fr;
+  display:grid;
+  gap:12px
+}
+
+/* ESTILOS DE INPUTS, SELECT Y TEXTAREA */
+
+input,select,textarea{
+  background:#0e131f;
+  border:1px solid #1b2840;
+  color:#eaeaea;
+  padding:10px;
+  border-radius:10px;
+  outline:none;
+  width:100%
+}
+
+input:focus,select:focus,textarea:focus{
+  box-shadow:0 0 0 2px rgba(30,144,255,.35)
+}
+
+.error{
+  color:#ff6b6b;
+  min-height:1.2em
+}
+
+.exito{
+  color:#42f59b
+}
+
+.info{
+  color:var(--texto-sec)
+}
+
+/* FOOTER */
+
 .pie{
   padding:20px;
   border-top:1px solid var(--borde);
   text-align:center;
-  color:var(--texto-sec);
+  color:var(--texto-sec)
 }
 
 .pie .pie-links a{
-  color:#9fb7ff;
+  color:#9fb7ff
 }
 
-/* Menú lateral (telefono) */
-.btn-menu{
-  display:none;
-  width:40px;
-  height:40px;
-  border:1px solid var(--borde);
-  border-radius:12px;
-  background:#101626;
-  color:#eaeaea;
-  align-items:center;
-  justify-content:center;
-}
-
-.btn-menu .icono-cerrar{
-  display:none;
-}
-
-body.menu-abierto .btn-menu .icono-menu{
-  display:none;
-}
-
-body.menu-abierto .btn-menu .icono-cerrar{
-  display:inline;
-}
-
-.menu-lateral{
-  position:fixed;
-  inset:0 auto 0 0;
-  width:min(85vw,340px);
-  background:#0b0f16;
-  border-right:1px solid var(--borde);
-  transform:translateX(-100%);
-  transition:transform .28s ease;
-  z-index:60;
-  overflow-y:auto;
-}
-
-.menu-cabecera{
-  padding:16px;
-  border-bottom:1px solid var(--borde);
-}
-
-.menu-lista{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  padding:10px 12px;
-}
-
-.menu-lista a{
-  padding:10px 12px;
-  border-radius:10px;
-  color:#cfd6ff;
-}
-
-.menu-lista a:hover{
-  background:#12182a;
-  color:#fff;
-}
-
-.cortina{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .25s ease;
-  z-index:50;
-}
-
-body.menu-abierto .menu-lateral{
-  transform:translateX(0);
-}
-
-body.menu-abierto .cortina{
-  opacity:1;
-  pointer-events:auto;
-}
-
-body.menu-abierto{
-  overflow:hidden;
-}
-
-/* Responsive */
 @media (max-width:900px){
-  .btn-menu{
-    display:inline-flex;
-  }
-  .navegacion{
-    display:none;
-  }
-  .hero{
-    grid-template-columns:1fr;
-  }
-}
-
-/* Reducir movimiento */
-@media (prefers-reduced-motion:reduce){
-  *{
-    animation:none !important;
-    transition:none !important;
-  }
+  .hero{grid-template-columns:1fr}
+  .detalle{grid-template-columns:1fr}
+  .admin{grid-template-columns:1fr}
+  .formulario .fila.dos{grid-template-columns:1fr}
 }
