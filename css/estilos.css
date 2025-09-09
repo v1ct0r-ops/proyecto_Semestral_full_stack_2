@@ -536,10 +536,87 @@ input:focus,select:focus,textarea:focus{
 
 /* MIS COMPRAS */
 
-.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.8rem}
-.badge.peligro{background:#3a0d0d;color:#ffb3b3;border:1px solid #772020}
-.badge.exito{background:#0d3a1d;color:#b9ffd1;border:1px solid #1e7a3a}
-.badge.secundario{background:#1d1f24;color:#cfd3da;border:1px solid #2c2f36}
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:.8rem
+}
+
+.badge.peligro{
+  background:#3a0d0d;
+  color:#ffb3b3;
+  border:1px solid #772020
+}
+
+.badge.exito{
+  background:#0d3a1d;
+  color:#b9ffd1;
+  border:1px solid #1e7a3a
+}
+
+.badge.secundario{
+  background:#1d1f24;
+  color:#cfd3da;
+  border:1px solid #2c2f36
+}
+
+/* ESTILOS DE PANEL ADMIN */
+
+.admin{
+  display:grid;
+  grid-template-columns:240px 1fr
+}
+
+.menu-admin{
+  background:#0b0f16;
+  border-right:1px solid var(--borde);
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+
+.menu-admin a{
+  padding:10px;
+  border-radius:10px
+}
+
+.menu-admin a.activo,.menu-admin a:hover{
+  background:#12182a
+}
+
+.panel{
+  padding:16px
+}
+
+.tabla{
+  width:100%;
+  border-collapse:collapse
+}
+
+.tabla th,.tabla td{
+  border-bottom:1px solid var(--borde);
+  padding:8px;
+  text-align:left
+}
+
+.admin-kpis{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+  margin-top:12px
+}
+
+.kpi{
+  background:#0c101a;
+  border:1px solid var(--borde);
+  border-radius:12px;
+  padding:16px;
+  text-align:center;
+  font-size:1.6rem
+}
+
 
 
 /* CARRITO */
