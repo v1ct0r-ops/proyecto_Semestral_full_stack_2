@@ -209,6 +209,202 @@ function actualizarNavegacion(){
   actualizarContadorCarrito();
 }
 
+
+/* PERFIL */
+
+/* =============== PUNTOS / NIVELES + COMPRAS =============== */
+const VALOR_PUNTO = 10;              // 1 punto = $10 CLP de descuento
+const TOPE_DESC_POR_PUNTOS = 0.20;   // Máximo 20% del total usando puntos (guardado por si luego lo usas)
+
+function asegurarCodigoReferido(usuario){
+  if (!usuario.codigoReferido) {
+    usuario.codigoReferido = "REF" + Math.random().toString(36).substring(2,8).toUpperCase();
+  }
+}
+function calcularNivel(p){
+  if (p >= 500) return "Oro";
+  if (p >= 200) return "Plata";
+  return "Bronce";
+}
+function puntosPorCompra(totalCLP, nivel){
+  const base = Math.floor(totalCLP / 1000); // 1 punto por cada $1000
+  if (nivel === "Plata") return Math.floor(base * 1.25);
+  if (nivel === "Oro")   return Math.floor(base * 1.5);
+  return base;
+}
+function guardarUsuarioActual(u){
+  const usuarios = obtener("usuarios", []);
+  const idx = usuarios.findIndex(x => x.correo?.toLowerCase() === u.correo?.toLowerCase());
+  if (idx >= 0) {
+    usuarios[idx] = u;
+    guardar("usuarios", usuarios);
+  }
+}
+function registrarCompraAlUsuario(u, items){
+  // items: [{codigo, cantidad, precio}]
+  u.compras = Array.isArray(u.compras) ? u.compras : [];
+  const pedido = {
+    id: "PED-" + Date.now(),
+    fecha: new Date().toISOString(),
+    items: items.map(it => ({ codigo: it.codigo, cantidad: it.cantidad, precio: it.precio }))
+  };
+  u.compras.push(pedido);
+  guardarUsuarioActual(u);
+}
+
+/* =============== Cargar, validar y guardar datos del usuario =============== */
+function inicializarPerfil(){
+  const form = document.getElementById("formPerfil");
+  if (!form) return; // no estás en perfil.html
+
+  const u = usuarioActual();
+  if (!u) { window.location.href = "login.html"; return; }
+
+  // refs
+  const iRun   = document.getElementById("p_run");
+  const iNom   = document.getElementById("p_nombres");
+  const iApe   = document.getElementById("p_apellidos");
+  const iMail  = document.getElementById("p_correo");
+  const iFecha = document.getElementById("p_fecha");
+  const iReg   = document.getElementById("region");
+  const iCom   = document.getElementById("comuna");
+  const iDir   = document.getElementById("p_direccion");
+  const msg    = document.getElementById("msgPerfil");
+
+  // regiones/comunas
+
+  if (iReg && iCom) {
+    if (typeof regiones === "undefined" || !Array.isArray(regiones)) {
+      console.warn("No se encontró 'regiones'. Asegúrate de cargar datos.js antes de app.js.");
+    } else {
+      iReg.innerHTML = regiones.map(r => `<option>${r.nombre}</option>`).join("");
+      const actualizarComunas = () => {
+        const r = regiones.find(x => x.nombre === iReg.value);
+        iCom.innerHTML = (r?.comunas || []).map(c => `<option>${c}</option>`).join("");
+      };
+      iReg.addEventListener("change", actualizarComunas);
+      actualizarComunas(); // primera carga
+    }
+  }
+
+  // set valores iniciales
+  if (iRun)   iRun.value   = u.run || "";
+  if (iNom)   iNom.value   = u.nombres || "";
+  if (iApe)   iApe.value   = u.apellidos || "";
+  if (iMail)  iMail.value  = u.correo || "";
+  if (iFecha) iFecha.value = u.fechaNacimiento || "";
+  if (iDir)   iDir.value   = u.direccion || "";
+
+  if (iReg && Array.isArray(window.regiones)) {
+    // set región y disparar comunas
+    const regionUsuario = u.region || (window.regiones[0]?.nombre || "");
+    iReg.value = regionUsuario;
+    iReg.dispatchEvent(new Event("change"));
+  }
+
+  // guardar
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    // limpiar msgs
+    ["errPNombres","errPApellidos","errPCorreo","errPFecha","errPRegion","errPComuna","errPDireccion","msgPerfil"]
+      .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ""; });
+
+    const nombres = iNom.value.trim();
+    const apellidos = iApe.value.trim();
+    const correo = iMail.value.trim();
+    const fechaNac = iFecha.value;
+    const region = iReg ? iReg.value : "";
+    const comuna = iCom ? iCom.value : "";
+    const direccion = iDir.value.trim();
+
+    let ok = true;
+    if (!nombres)                            { document.getElementById("errPNombres").textContent = "Requerido."; ok=false; }
+    if (!apellidos)                          { document.getElementById("errPApellidos").textContent = "Requerido."; ok=false; }
+    if (!esCorreoPermitido(correo) || correo.length>100) {
+      document.getElementById("errPCorreo").textContent = "Correo no permitido o demasiado largo."; ok=false;
+    }
+    if (!esMayorDe18(fechaNac))              { document.getElementById("errPFecha").textContent = "Debés ser mayor de 18."; ok=false; }
+    if (iReg && !region)                     { document.getElementById("errPRegion").textContent = "Seleccioná una región."; ok=false; }
+    if (iCom && !comuna)                     { document.getElementById("errPComuna").textContent = "Seleccioná una comuna."; ok=false; }
+    if (!direccion || direccion.length>300)  { document.getElementById("errPDireccion").textContent = "Dirección inválida (máx 300)."; ok=false; }
+    // correo único (si cambió)
+    if (correo.toLowerCase() !== (u.correo||"").toLowerCase()){
+      const otros = obtener("usuarios", []).filter(x => x.run !== u.run);
+      if (otros.some(x => x.correo?.toLowerCase() === correo.toLowerCase())){
+        document.getElementById("errPCorreo").textContent = "Ese correo ya está registrado."; ok=false;
+      }
+    }
+    if (!ok) return;
+
+    // actualizar user
+    const users = obtener("usuarios", []);
+    const idx = users.findIndex(x => x.run === u.run);
+    if (idx >= 0) {
+      users[idx].nombres = nombres;
+      users[idx].apellidos = apellidos;
+      users[idx].correo = correo;
+      users[idx].fechaNacimiento = fechaNac;
+      users[idx].region = region;
+      users[idx].comuna = comuna;
+      users[idx].direccion = direccion;
+
+      guardar("usuarios", users);
+
+      // si cambió el mail, actualizar la sesión
+      const ses = obtener("sesion", null);
+      if (ses && ses.correo?.toLowerCase() === (u.correo||"").toLowerCase()) {
+        guardar("sesion", { correo: correo, tipo: u.tipoUsuario });
+      }
+
+      if (msg) msg.textContent = "Datos guardados.";
+      setTimeout(()=>{ if (msg) msg.textContent=""; }, 1500);
+      actualizarNavegacion();
+    }
+  });
+
+  // abrir/cerrar modal pass
+  const dlg = document.getElementById("dlgPass");
+  const btnCambiar = document.getElementById("btnCambiarPass");
+  const formPass = document.getElementById("formPass");
+  const btnCancelarPass = document.getElementById("btnCancelarPass");
+
+  if (btnCambiar) btnCambiar.addEventListener("click", ()=> dlg.showModal());
+  if (btnCancelarPass) btnCancelarPass.addEventListener("click", ()=> dlg.close());
+
+  // submit cambio de pass
+  if (formPass){
+    formPass.addEventListener("submit",(e)=>{
+      e.preventDefault();
+
+      ["errPassActual","errPassNueva","errPassNueva2","msgPass"].forEach(id=>{
+        const el = document.getElementById(id); if (el) el.textContent = "";
+      });
+
+      const pAct = document.getElementById("passActual").value;
+      const pNew = document.getElementById("passNueva").value;
+      const pNew2= document.getElementById("passNueva2").value;
+      let ok = true;
+
+      if ((u.pass||"") !== pAct) { document.getElementById("errPassActual").textContent = "La contraseña actual no coincide."; ok=false; }
+      if (pNew.length<4 || pNew.length>10) { document.getElementById("errPassNueva").textContent = "Debe tener 4 a 10 caracteres."; ok=false; }
+      if (pNew !== pNew2) { document.getElementById("errPassNueva2").textContent = "La confirmación no coincide."; ok=false; }
+
+      if (!ok) return;
+
+      // guardar nueva pass
+      const users = obtener("usuarios", []);
+      const idx = users.findIndex(x => x.run === u.run);
+      if (idx >= 0) {
+        users[idx].pass = pNew;
+        guardar("usuarios", users);
+        document.getElementById("msgPass").textContent = "Contraseña actualizada ✔";
+        setTimeout(()=> dlg.close(), 800);
+      }
+    });
+  }
+}
+
+
 /* =============== FORMATO =============== */
 function formatoPrecio(num){
   return num.toLocaleString("es-CL",{style:"currency",currency:"CLP", maximumFractionDigits:0});
@@ -776,6 +972,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Formularios
   inicializarRegistro();
   inicializarLogin();
+
+  inicializarPerfil();
 
   // Detalle de producto
   cargarDetalle();
