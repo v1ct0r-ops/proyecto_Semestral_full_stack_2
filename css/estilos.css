@@ -289,6 +289,11 @@ body.menu-abierto{
   }
 }
 
+/* PANEL PARA CANCELAR PEDIDO */
+.modal::backdrop { 
+  background: rgba(0,0,0,.6); 
+}
+
 
 
 /* INDEX */
@@ -460,6 +465,187 @@ input:focus,select:focus,textarea:focus{
 .info{
   color:var(--texto-sec)
 }
+
+
+/* PRODUCTOS */
+
+.barra-productos{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:16px;padding:16px;
+  border-bottom:1px solid var(--borde)
+}
+
+.filtros{
+  display:flex;
+  gap:10px
+}
+
+.listado-productos{
+  padding:16px
+}
+
+.tarjeta-producto .acciones{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:space-between
+}
+
+.detalle{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
+  padding:16px
+}
+
+.detalle-imagen img{
+  width:100%;
+  height:auto;
+  border-radius:16px;
+  border:1px solid var(--borde)
+}
+
+.detalle-info .precio{
+  color:var(--verde);font-size:1.3rem
+}
+
+.link-ver-mas { 
+  display:inline-block; 
+  margin:8px 0; color:var(--azul); 
+}
+
+.link-ver-mas:hover { 
+  text-decoration:underline; 
+}
+
+.detalles-box{
+  margin-top:8px; 
+  padding:12px; 
+  border:1px solid var(--borde);
+  border-radius:12px; 
+  background:#0f0f12; 
+  color:var(--texto-sec);
+}
+
+.detalles-box h4{ 
+  margin:0 0 6px; 
+  font-size:14px; color:#cfe3ff; 
+}
+
+/* MIS COMPRAS */
+
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:.8rem
+}
+
+.badge.peligro{
+  background:#3a0d0d;
+  color:#ffb3b3;
+  border:1px solid #772020
+}
+
+.badge.exito{
+  background:#0d3a1d;
+  color:#b9ffd1;
+  border:1px solid #1e7a3a
+}
+
+.badge.secundario{
+  background:#1d1f24;
+  color:#cfd3da;
+  border:1px solid #2c2f36
+}
+
+/* ESTILOS DE PANEL ADMIN */
+
+.admin{
+  display:grid;
+  grid-template-columns:240px 1fr
+}
+
+.menu-admin{
+  background:#0b0f16;
+  border-right:1px solid var(--borde);
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+
+.menu-admin a{
+  padding:10px;
+  border-radius:10px
+}
+
+.menu-admin a.activo,.menu-admin a:hover{
+  background:#12182a
+}
+
+.panel{
+  padding:16px
+}
+
+.tabla{
+  width:100%;
+  border-collapse:collapse
+}
+
+.tabla th,.tabla td{
+  border-bottom:1px solid var(--borde);
+  padding:8px;
+  text-align:left
+}
+
+.admin-kpis{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+  margin-top:12px
+}
+
+.kpi{
+  background:#0c101a;
+  border:1px solid var(--borde);
+  border-radius:12px;
+  padding:16px;
+  text-align:center;
+  font-size:1.6rem
+}
+
+
+
+/* CARRITO */
+
+.carrito-panel{
+  background:#0b0f16;
+  border-top:1px solid var(--borde);padding:16px
+}
+
+.resumen-carrito{
+  display:flex;
+  gap:16px;
+  align-items:center;
+  justify-content:flex-end
+}
+
+.resumen-carrito p{
+  margin:0
+}
+
+.item-carrito{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border-bottom:1px dashed #2a2a3a;
+  padding:8px 0
+}
+
 
 /* FOOTER */
 

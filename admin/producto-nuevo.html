@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="img/favicon.png" type="image/png">
+  <title>Nuevo Producto | Level-Up Gamer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/estilos.css" />
+  <script defer src="../js/datos.js"></script>
+  <script defer src="../js/app.js"></script>
+</head>
+<body>
+  <header class="encabezado">
+    <a class="logo" href="admin.html">
+      <img src="../img/LOGO.png" alt="Logo" class="logoBase">
+    </a>
+
+    <!-- Botón menú móvil (opcional si usas el mismo lateral) -->
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
+      <span class="icono-menu" aria-hidden="true">☰</span>
+      <span class="icono-cerrar" aria-hidden="true">✕</span>
+    </button>
+
+    <!-- NAV superior -->
+    <nav class="navegacion">
+      <a href="../index.html">Inicio</a>
+      <a href="../productos.html">Productos</a>
+
+      <!-- Perfil (escritorio) -->
+      <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
+        <img src="../img/imgPerfil.png" alt="" loading="lazy">
+      </button>
+    </nav>
+  </header>
+
+  <!-- Menú lateral móvil (si usas el mismo sistema del sitio) -->
+  <aside id="menuLateral" class="menu-lateral" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="menu-cabecera">
+      <a class="logo" href="admin.html">
+        <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span>
+      </a>
+    </div>
+    <nav id="menuLista" class="menu-lista"></nav>
+  </aside>
+  <div id="cortina" class="cortina" hidden></div>
+
+  <main class="principal">
+
+    <section class="admin">
+      <!-- Menú del panel -->
+      <aside class="menu-admin">
+        <a href="admin.html">Inicio</a>
+        <a href="productos.html" class="activo">Productos</a>
+        <a href="usuarios.html">Usuarios</a> <!-- Se oculta por JS si es vendedor -->
+        <a href="pedidos.html">Pedidos</a>
+      </aside>
+      <div class="panel">
+        <h1>Nuevo Producto</h1>
+        <form id="formProducto" class="formulario" novalidate>
+          <div class="fila">
+            <label for="codigoProducto">Código</label>
+            <input id="codigoProducto" minlength="3" required>
+            <div class="error" id="errCodigoProducto"></div>
+          </div>
+          <div class="fila">
+            <label for="nombreProducto">Nombre</label>
+            <input id="nombreProducto" maxlength="100" required>
+            <div class="error" id="errNombreProducto"></div>
+          </div>
+          <div class="fila">
+            <label for="descripcionProducto">Descripción</label>
+            <textarea id="descripcionProducto" maxlength="500" rows="3"></textarea>
+          </div>
+          <div class="fila">
+            <label for="detallesProducto">Detalles (opcional)</label>
+            <textarea id="detallesProducto" rows="4" placeholder="Origen, fabricante, distribuidor, certificaciones…"></textarea>
+            <small class="pista">Se muestra en “Ver más” del detalle.</small>
+            <div class="error" id="errDetallesProducto"></div>
+          </div>
+          <div class="fila dos">
+            <div>
+              <label for="precioProducto">Precio</label>
+              <input id="precioProducto" type="number" min="0" step="0.01" required>
+              <div class="error" id="errPrecioProducto"></div>
+            </div>
+            <div>
+              <label for="stockProducto">Stock</label>
+              <input id="stockProducto" type="number" min="0" step="1" required>
+              <div class="error" id="errStockProducto"></div>
+            </div>
+          </div>
+          <div class="fila">
+            <label for="stockCriticoProducto">Stock Crítico (opcional)</label>
+            <input id="stockCriticoProducto" type="number" min="0" step="1">
+          </div>
+          <div class="fila">
+            <label for="categoriaProducto">Categoría</label>
+            <select id="categoriaProducto" required></select>
+            <div class="error" id="errCategoriaProducto"></div>
+          </div>
+          <div class="fila">
+            <label for="imagenProducto">Imagen (URL opcional)</label>
+            <input id="imagenProducto" placeholder="https://...">
+          </div>
+          <button class="btn primario" type="submit">Guardar</button>
+          <p id="msgProducto" class="exito"></p>
+        </form>
+      </div>
+    </section>
+
+  </main>
+  <footer class="pie">
+    <p>© 2025 Level-Up Gamer — Chile</p>
+    <p class="pie-links">
+      <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://x.com" target="_blank" rel="noopener">X</a> ·
+      <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+    </p>
+  </footer>
+  <!-- Panel Mi Cuenta (desktop = derecha, móvil = izquierda) -->
+  <aside id="panelCuenta" class="panel-cuenta" aria-hidden="true">
+    <div class="panel-cuenta__cab">
+      <h3>Mi cuenta</h3>
+      <button id="btnCerrarCuenta" class="panel-cuenta__cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="panel-cuenta__contenido">
+      <div class="panel-cuenta__avatar">
+        <img src="../img/imgPerfil.png" alt="Foto de perfil">
+      </div>
+
+      <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
+      <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
+      <a class="btn secundario" href="../perfil.html">Editar Perfil</a>
+
+      <div class="panel-cuenta__bloque">
+        <label><strong>Código de referido</strong></label>
+        <div class="panel-cuenta__ref">
+          <input id="cuentaCodigoReferido" readonly>
+          <button id="btnCopiarCodigo" class="btn secundario" type="button">Copiar</button>
+        </div>
+        <small class="pista">Comparte este código. Si alguien se registra con él, ganás puntos.</small>
+      </div>
+
+      <div class="panel-cuenta__bloque">
+        <p><strong>Puntos LevelUp:</strong> <span id="cuentaPuntos">0</span></p>
+        <p><strong>Nivel:</strong> <span id="cuentaNivel">Bronce</span></p>
+        <small class="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+      </div>
+
+      <div class="panel-cuenta__acciones">
+        <a class="btn secundario" href="misCompras.html">Mis compras</a>
+        <button id="btnSalirCuenta" class="btn">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Cortina del panel -->
+  <div id="cortinaCuenta" class="cortina" hidden></div>
+
+</body>
+</html>
