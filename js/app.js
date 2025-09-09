@@ -16,6 +16,7 @@ if (!localStorage.getItem("productos") && Array.isArray(productosBase)) {
 }
 if (!localStorage.getItem("usuarios")) guardar("usuarios", []);
 if (!localStorage.getItem("carrito"))  guardar("carrito", []);
+if (!localStorage.getItem("resenas"))   guardar("resenas", {});
 
 /* LOGIN Y REGISTRO */
 
@@ -316,7 +317,7 @@ function inicializarMenuLateral(){
   const lista = document.getElementById("menuLista");
   if (!btn || !panel || !navDesk || !lista) return;
 
-  // reconstruir solo una vez
+  // reconstruir el nav para escrito solo una vez
   if (!lista.dataset.clonado) {
     lista.innerHTML = "";
 
@@ -331,7 +332,7 @@ function inicializarMenuLateral(){
 
     }
 
-    // 2) Clonamos los enlaces del nav de escritorio (sin IDs)
+    // 2) Clonamos los enlaces del nav de escritorio
     navDesk.querySelectorAll("a").forEach(a => {
       if (a.classList.contains("oculto")) return; // saltamos ocultos
       if ((a.id||"").toLowerCase() === "linksalir") return; // no duplicar salir
@@ -419,7 +420,6 @@ function abrirPanelCuenta(){
   const cortina = document.getElementById("cortinaCuenta");
   if (!u || !panel || !cortina) return;
 
-  // Asegurar código y guardar por si no tenía
   asegurarCodigoReferido(u);
   guardarUsuarioActual(u);
 
@@ -475,7 +475,7 @@ function abrirPanelCuenta(){
       actualizarNavegacion();
       cerrar();
 
-      // Redirección según si estamos en admin o no
+      // Redireccion segun rol
       if (location.pathname.includes("/admin/")) {
         window.location.href = "../index.html";
       } else {
@@ -491,20 +491,255 @@ function abrirPanelCuenta(){
   cortina.hidden = false;
 }
 
+
+/* PRODUCTOS */
+
+
+/* ===== Productos / Filtros ===== */
+function precioConDescuento(precio){
+  const u = usuarioActual();
+  const esDuoc = !!(u && u.correo?.toLowerCase().endsWith("@duoc.cl"));
+  return esDuoc ? Math.round(precio*0.8) : precio; // 20% off
+}
+
+function popularCategorias(){
+  const sel = document.getElementById("filtroCategoria");
+  const selAdmin = document.getElementById("categoriaProducto");
+  const prods = obtener("productos", []);
+  const cats = Array.from(new Set(prods.map(p=>p.categoria))).sort();
+
+  if (sel){
+    sel.innerHTML = '<option value="">Todas las categorías</option>' +
+      cats.map(c=>`<option>${c}</option>`).join("");
+  }
+  if (selAdmin){
+    selAdmin.innerHTML = cats.map(c=>`<option>${c}</option>`).join("");
+  }
+}
+
+// Normaliza texto para búsqueda (quita acentos, pasa a lowercase)
+function norm(txt){
+  return (txt||"")
+    .toString()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase().trim();
+}
+
+function renderProductos(){
+  const grid = document.getElementById("gridProductos");
+  if(!grid) return;
+
+  const texto = norm(document.getElementById("buscador")?.value || "");
+  const cat = document.getElementById("filtroCategoria")?.value || "";
+
+  const prods = obtener("productos", []).filter(p=>{
+    const okCat = !cat || p.categoria === cat;
+    const hayTexto = !!texto;
+    const nombreOK = norm(p.nombre).includes(texto);
+    const codigoOK = norm(p.codigo).includes(texto);
+    // si hay texto, debe coincidir nombre o código
+    const okTxt = !hayTexto || nombreOK || codigoOK;
+    return okCat && okTxt;
+  });
+
+  if (prods.length === 0){
+    grid.innerHTML = `
+      <div class="tarjeta" style="padding:16px; text-align:center;">
+        <p class="info">Sin resultados. Probá otra búsqueda o categoría.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = prods.map(p=>`
+    <article class="tarjeta tarjeta-producto">
+      <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='img/placeholder.jpg'">
+      <div class="contenido">
+        <h3>${p.nombre}</h3>
+        <small>${p.categoria}</small>
+        <p class="precio">${formatoPrecio(precioConDescuento(p.precio))}</p>
+        <div class="acciones">
+          <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
+          <button class="btn primario" onclick="agregarAlCarrito('${p.codigo}')">Añadir</button>
+        </div>
+      </div>
+    </article>
+  `).join("");
+}
+
+/* =============== DETALLE DE PRODUCTO + RESEÑAS =============== */
+function obtenerResenas(){ return obtener("resenas", {}); }
+function guardarResenas(obj){ guardar("resenas", obj); }
+
+function promedioResenas(codigo){
+  const all = obtenerResenas();
+  const arr = all[codigo] || [];
+  if (!arr.length) return 0;
+  const sum = arr.reduce((s, r) => s + (Number(r.rating)||0), 0);
+  return Math.round((sum / arr.length) * 10)/10; // 1 decimal
+}
+function usuarioComproProducto(u, codigo){
+  if (!u || !Array.isArray(u.compras)) return false;
+  return u.compras.some(ped => Array.isArray(ped.items) && ped.items.some(it => it.codigo === codigo));
+}
+
+function renderResenasProducto(codigo){
+  const all = obtenerResenas();
+  const arr = all[codigo] || [];
+  const cont = document.getElementById("listaResenas");
+  const promEl = document.getElementById("promedioResenas");
+  const cantEl = document.getElementById("cantidadResenas");
+
+  if (promEl) promEl.textContent = promedioResenas(codigo).toFixed(1);
+  if (cantEl) cantEl.textContent = arr.length;
+
+  if (cont){
+    cont.innerHTML = arr.length
+      ? arr.map(r => `
+        <div class="resena-item">
+          <div>⭐ ${r.rating} / 5</div>
+          <div class="autor">${(r.nombre || r.correo || "Usuario")} — ${new Date(r.fecha).toLocaleDateString('es-CL')}</div>
+          <div>${(r.comentario || '').replace(/</g,"&lt;")}</div>
+        </div>
+      `).join("")
+      : "<p class='info'>Aún no hay reseñas.</p>";
+  }
+}
+function prepararFormResena(codigo){
+  const u = usuarioActual();
+  const box = document.getElementById("formResenaBox");
+  const bloqueo = document.getElementById("bloqueoResena");
+  if (!box || !bloqueo) return;
+
+  if (!u){
+    box.classList.add("oculto");
+    bloqueo.classList.remove("oculto");
+    bloqueo.textContent = "Iniciá sesión para calificar.";
+    return;
+  }
+  const puede = usuarioComproProducto(u, codigo);
+  if (!puede){
+    box.classList.add("oculto");
+    bloqueo.classList.remove("oculto");
+    bloqueo.textContent = "Debés haber comprado este producto para poder calificarlo.";
+    return;
+  }
+
+  box.classList.remove("oculto");
+  bloqueo.classList.add("oculto");
+
+  const btn = document.getElementById("btnEnviarResena");
+  const puntaje = document.getElementById("puntajeResena");
+  const comentario = document.getElementById("comentarioResena");
+  const msg = document.getElementById("msgResena");
+
+  if (btn && !btn.dataset.bind){
+    btn.addEventListener("click", ()=>{
+      const rating = Math.max(1, Math.min(5, Number(puntaje.value)||5));
+      const texto = (comentario.value || "").trim();
+      const all = obtenerResenas();
+      all[codigo] = all[codigo] || [];
+
+      // evitar múltiples reseñas del mismo usuario
+      const uAct = usuarioActual(); // por si cambió
+      if (!uAct) { msg.textContent = "Sesión finalizada."; return; }
+      const ya = all[codigo].some(r => r.correo?.toLowerCase() === uAct.correo.toLowerCase());
+      if (ya){ msg.textContent = "Ya enviaste una reseña para este producto."; return; }
+
+      all[codigo].push({
+        correo: uAct.correo,
+        nombre: `${uAct.nombres||""} ${uAct.apellidos||""}`.trim(),
+        rating,
+        comentario: texto,
+        fecha: new Date().toISOString()
+      });
+      guardarResenas(all);
+
+      comentario.value = "";
+      renderResenasProducto(codigo);
+      msg.textContent = "¡Gracias! Tu reseña fue publicada.";
+      setTimeout(()=> msg.textContent="", 1500);
+    });
+    btn.dataset.bind = "1";
+  }
+}
+
+function cargarDetalle(){
+  const params = new URLSearchParams(location.search);
+  const codigo = params.get("codigo");
+  if(!codigo) return;
+
+  const prod = obtener("productos", []).find(p=>p.codigo===codigo);
+  if(!prod) return;
+
+  const img = document.getElementById("imagenDetalle");
+  const nom = document.getElementById("nombreDetalle");
+  const cat = document.getElementById("categoriaDetalle");
+  const pre = document.getElementById("precioDetalle");
+  const des = document.getElementById("descripcionDetalle");
+
+  if (img) img.src = prod.imagen;
+  if (nom) nom.textContent = prod.nombre;
+  if (cat) cat.textContent = prod.categoria;
+  if (pre) pre.textContent = formatoPrecio(precioConDescuento(prod.precio));
+  if (des) des.textContent = prod.descripcion || "";
+
+  // ===== Ver más (detalles) =====
+  const link = document.getElementById("linkVerMas");
+  const box  = document.getElementById("boxDetalles");
+  const txt  = document.getElementById("detallesDetalle");
+
+  if (link && box && txt){
+    const hayDetalles = !!prod.detalles && prod.detalles.trim() !== "";
+    if (!hayDetalles){
+      // si no hay detalles, ocultamos el link
+      link.style.display = "none";
+      box.hidden = true;
+    } else {
+      txt.textContent = prod.detalles;
+      box.hidden = true; // inicia plegado
+      link.textContent = "Ver más";
+      if (!link.dataset.bind){
+        link.addEventListener("click",(e)=>{
+          e.preventDefault();
+          const abierto = !box.hidden;
+          box.hidden = abierto; // toggle
+          link.textContent = abierto ? "Ver más" : "Ocultar";
+        });
+        link.dataset.bind = "1";
+      }
+    }
+  }
+
+  // Botón agregar
+  const btn = document.getElementById("btnAgregarDetalle");
+  if (btn){
+    btn.addEventListener("click", ()=>{
+      const cant = parseInt(document.getElementById("cantidadDetalle")?.value||"1",10);
+      agregarAlCarrito(codigo, cant);
+    });
+  }
+
+  // Reseñas
+  renderResenasProducto(codigo);
+  prepararFormResena(codigo);
+}
+
+
 /* =============== INICIALIZACIÓN =============== */
 document.addEventListener("DOMContentLoaded", () => {
   // Nav / Sesion
   actualizarNavegacion();
 
-  // Salir de sesión
+  // Salir de sesiOn
   const linkSalir = document.getElementById("linkSalir");
-  if(linkSalir){
-    linkSalir.addEventListener("click", (e)=>{
+  if (linkSalir && !linkSalir.dataset.bind) {
+    linkSalir.addEventListener("click", (e) => {
       e.preventDefault();
       localStorage.removeItem("sesion");
       actualizarNavegacion();
       window.location.href = "index.html";
     });
+    linkSalir.dataset.bind = "1";
   }
 
   // Botón perfil (desktop)
@@ -520,9 +755,92 @@ document.addEventListener("DOMContentLoaded", () => {
   // Index
   renderDestacados();
 
+  // Productos
+  if (document.getElementById("gridProductos")){
+    popularCategorias();
+    renderProductos();
+
+    const filtro = document.getElementById("filtroCategoria");
+    const buscador = document.getElementById("buscador");
+
+    if (filtro && !filtro.dataset.bind){
+      filtro.addEventListener("change", renderProductos);
+      filtro.dataset.bind = "1";
+    }
+    if (buscador && !buscador.dataset.bind){
+      buscador.addEventListener("input", renderProductos);
+      buscador.dataset.bind = "1";
+    }
+  }
+
   // Formularios
   inicializarRegistro();
+  inicializarLogin();
 
-  // Menú móvil
+  // Detalle de producto
+  cargarDetalle();
+
+  // Carrito
+  renderCarrito();
+
+  // Botón pagar
+  const btnPagar = document.getElementById("btnPagar");
+  if (btnPagar && !btnPagar.dataset.bind){
+    btnPagar.addEventListener("click", ()=>{
+      const u = usuarioActual();
+      if(!u){ alert("Debés iniciar sesión para pagar."); window.location.href = "login.html"; return; }
+
+      // total + items para registrar
+      const carrito = obtener("carrito", []);
+      const prods = obtener("productos", []);
+      let total = 0;
+      const itemsCompra = [];
+
+      carrito.forEach(it=>{
+        const p = prods.find(x=>x.codigo===it.codigo);
+        if (p) {
+          total += p.precio * it.cantidad;
+          itemsCompra.push({ codigo: p.codigo, cantidad: it.cantidad, precio: p.precio });
+        }
+      });
+
+      // === crear pedido global para panel de Pedidos ===
+      const pedidoId = "PED-" + Date.now();
+      const pedido = {
+        id: pedidoId,
+        fecha: new Date().toISOString(),
+        estado: "pendiente", // "pendiente" | "despachado"
+        comprador: {
+          run: u.run, nombres: u.nombres, apellidos: u.apellidos, correo: u.correo
+        },
+        envio: {
+          region: u.region || "", comuna: u.comuna || "", direccion: u.direccion || ""
+        },
+        items: itemsCompra.map(it => ({ codigo: it.codigo, cantidad: it.cantidad, precio: it.precio })),
+        total: total // sin descuentos, si querés guarda también total con descuento
+      };
+      const todos = obtenerPedidos();
+      todos.push(pedido);
+      guardarPedidos(todos);
+
+      // puntos
+      const nivel = calcularNivel(u.puntosLevelUp || 0);
+      const ganados = puntosPorCompra(total, nivel);
+      u.puntosLevelUp = (u.puntosLevelUp || 0) + ganados;
+      asegurarCodigoReferido(u);
+
+      // registrar compra
+      registrarCompraAlUsuario(u, itemsCompra);
+      
+
+      alert(`Pago simulado. ¡Gracias por tu compra!\nGanaste ${ganados} puntos (Nivel: ${nivel}).`);
+      guardar("carrito", []);
+      renderCarrito();
+      actualizarNavegacion();
+    });
+    btnPagar.dataset.bind = "1";
+  }
+
+  // Menu movil
   inicializarMenuLateral();
 });
