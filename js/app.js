@@ -17,13 +17,14 @@ if (!localStorage.getItem("productos") && Array.isArray(window.productosBase)) {
 if (!localStorage.getItem("usuarios")) guardar("usuarios", []);
 if (!localStorage.getItem("carrito"))  guardar("carrito", []);
 
+/* LOGIN Y REGISTRO */
 
 /* =============== REGISTRO: regiones/comunas + submit =============== */
 function inicializarRegistro(){
   const form = document.getElementById("formRegistro");
-  if (!form) return; // no estás en registro.html
+  if (!form) return; 
 
-  // Popular regiones/comunas usando la variable global 'regiones'
+  // Regiones/comunas
   const selRegion = document.getElementById("region");
   const selComuna = document.getElementById("comuna");
 
@@ -37,7 +38,7 @@ function inicializarRegistro(){
         selComuna.innerHTML = (r?.comunas || []).map(c => `<option>${c}</option>`).join("");
       };
       selRegion.addEventListener("change", actualizarComunas);
-      actualizarComunas(); // primera carga
+      actualizarComunas();
     }
   }
 
@@ -105,6 +106,45 @@ function inicializarRegistro(){
     form.reset();
   });
 }
+
+
+/* =============== LOGIN =============== */
+function inicializarLogin(){
+  const form = document.getElementById("formLogin");
+  if (!form) return; // no estás en login.html
+
+  form.addEventListener("submit",(e)=>{
+    e.preventDefault();
+    const correo = document.getElementById("correoLogin").value.trim();
+    const pass   = document.getElementById("passwordLogin").value;
+
+    const errCorreo = document.getElementById("errCorreoLogin");
+    const errPass   = document.getElementById("errPassLogin");
+    const msg       = document.getElementById("msgLogin");
+    if (errCorreo) errCorreo.textContent = "";
+    if (errPass)   errPass.textContent   = "";
+    if (msg)       msg.textContent       = "";
+
+    if(!esCorreoPermitido(correo) || correo.length>100){
+      if (errCorreo) errCorreo.textContent = "Correo inválido.";
+      return;
+    }
+    if(pass.length<4 || pass.length>10){
+      if (errPass) errPass.textContent = "Contraseña 4 a 10 caracteres.";
+      return;
+    }
+
+    const usuarios = obtener("usuarios", []);
+    const u = usuarios.find(x=>x.correo.toLowerCase()===correo.toLowerCase());
+    if(!u){ if (errCorreo) errCorreo.textContent = "No existe el usuario."; return; }
+    if(u.pass !== pass){ if (errPass) errPass.textContent = "Contraseña incorrecta."; return; }
+
+    guardar("sesion", {correo:u.correo, tipo:u.tipoUsuario});
+    if (msg) msg.textContent = "¡Bienvenido/a, " + (u.nombres||"") + "! Redirigiendo…";
+    setTimeout(()=>{ window.location.href = "productos.html"; }, 700);
+  });
+}
+
 
 /* =============== SESIÓN / NAV =============== */
 function usuarioActual(){
