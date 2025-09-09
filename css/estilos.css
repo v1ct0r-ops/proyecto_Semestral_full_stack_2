@@ -289,6 +289,11 @@ body.menu-abierto{
   }
 }
 
+/* PANEL PARA CANCELAR PEDIDO */
+.modal::backdrop { 
+  background: rgba(0,0,0,.6); 
+}
+
 
 
 /* INDEX */
@@ -528,6 +533,14 @@ input:focus,select:focus,textarea:focus{
   margin:0 0 6px; 
   font-size:14px; color:#cfe3ff; 
 }
+
+/* MIS COMPRAS */
+
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.8rem}
+.badge.peligro{background:#3a0d0d;color:#ffb3b3;border:1px solid #772020}
+.badge.exito{background:#0d3a1d;color:#b9ffd1;border:1px solid #1e7a3a}
+.badge.secundario{background:#1d1f24;color:#cfd3da;border:1px solid #2c2f36}
+
 
 /* CARRITO */
 

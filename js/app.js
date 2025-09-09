@@ -5,6 +5,10 @@ function obtener(key, defecto){
 function guardar(key, valor){
   localStorage.setItem(key, JSON.stringify(valor));
 }
+function obtenerPedidos(){ 
+  return obtener("pedidos", []); }
+function guardarPedidos(peds){ 
+  guardar("pedidos", peds); }
 function esAdmin(){ 
   const u=usuarioActual(); return !!(u && u.tipoUsuario==="admin"); }
 function esVendedor(){ 
@@ -403,6 +407,228 @@ function inicializarPerfil(){
     });
   }
 }
+
+
+/* =============== MIS COMPRAS  =============== */
+function renderMisCompras(){
+  const cont = document.getElementById("listaCompras");
+  if(!cont) return;
+
+  const u = usuarioActual();
+  if(!u){ cont.innerHTML = `<p class="info">Iniciá sesión para ver tus compras.</p>`; return; }
+
+  const compras = Array.isArray(u.compras) ? u.compras : [];
+  if (!compras.length){
+    cont.innerHTML = `<p class="info">Aún no tenés compras.</p>`;
+    return;
+  }
+
+  const prods = obtener("productos", []);
+  // más recientes primero
+  compras.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
+
+  cont.innerHTML = compras.map(ped=>{
+    const fecha = new Date(ped.fecha).toLocaleString("es-CL");
+    const estado = estadoPedido(ped.id); // "pendiente" | "despachado" | "cancelado"
+
+    const badge =
+      estado === "pendiente"  ? `<span class="badge peligro">Pendiente</span>` :
+      estado === "despachado" ? `<span class="badge exito">Despachado</span>` :
+                                `<span class="badge secundario">Cancelado</span>`;
+
+    const filas = ped.items.map(it=>{
+      const p = prods.find(x=>x.codigo===it.codigo);
+      const nombre = p ? p.nombre : it.codigo;
+      return `<div class="item-carrito">
+        <div><strong>${nombre}</strong><br><small>${it.codigo}</small></div>
+        <div>${formatoPrecio(it.precio)}</div>
+        <div>x${it.cantidad}</div>
+        <div>
+          <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(it.codigo)}#resenas">Calificar</a>
+        </div>
+      </div>`;
+    }).join("");
+
+    // Botón Cancelar solo si está pendiente
+    const btnCancelar = (estado === "pendiente")
+      ? `<button class="btn peligro" data-cancelar="${ped.id}">Cancelar pedido</button>`
+      : "";
+
+    return `<article class="tarjeta">
+      <div class="contenido">
+        <h4>Pedido ${ped.id} ${badge}</h4>
+        <p class="info">${fecha}</p>
+        ${filas}
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          ${btnCancelar}
+        </div>
+      </div>
+    </article>`;
+  }).join("");
+
+  // Delegación: abrir modal
+  if (!cont.dataset.bind){
+    cont.addEventListener("click",(e)=>{
+      const btn = e.target.closest("[data-cancelar]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-cancelar");
+      const dlg = document.getElementById("dlgCancelarPedido");
+      const hid = document.getElementById("cancelarPedidoId");
+      if (!dlg || !hid) return;
+      hid.value = id;
+      dlg.showModal();
+    });
+    cont.dataset.bind = "1";
+  }
+
+  // Botones del modal
+  const dlg = document.getElementById("dlgCancelarPedido");
+  const btnOk = document.getElementById("btnConfirmarCancelacion");
+  const btnClose = document.getElementById("btnCerrarCancelacion");
+
+  if (dlg && btnOk && !btnOk.dataset.bind){
+    btnOk.addEventListener("click", ()=>{
+      const id = document.getElementById("cancelarPedidoId").value;
+      if (!id) return;
+
+      // 1) Actualizar estado en la lista global
+      const pedidos = obtenerPedidos();
+      const ped = pedidos.find(p => p.id === id);
+      if (ped && ped.estado === "pendiente") {
+        ped.estado = "cancelado";
+        guardarPedidos(pedidos);
+      }
+
+      // 2) (Opcional) No cambiamos el histórico del usuario; solo el estado global
+      dlg.close();
+      renderMisCompras();
+      alert("Pedido cancelado.");
+    });
+    btnOk.dataset.bind = "1";
+  }
+  if (dlg && btnClose && !btnClose.dataset.bind){
+    btnClose.addEventListener("click", ()=> dlg.close());
+    btnClose.dataset.bind = "1";
+  }
+}
+
+
+
+/* PEDIDOS */
+
+function estadoPedido(id){
+  const p = obtenerPedidos().find(x => x.id === id);
+  return p ? p.estado : "pendiente";
+}
+
+function renderPedidos(){
+  const cont = document.getElementById("listaPedidos");
+  const filtro = document.getElementById("filtroPedidos");
+  if (!cont || !filtro) return;
+
+  const estado = filtro.value; // "", "pendiente", "despachado", "cancelado" (si agregás esta opción)
+  let arr = obtenerPedidos();
+
+  arr.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
+  if (estado) arr = arr.filter(p => p.estado === estado);
+
+  if (!arr.length){
+    cont.innerHTML = `<p class="info">No hay pedidos para este filtro.</p>`;
+    return;
+  }
+
+  cont.innerHTML = arr.map(p => {
+    const fecha = new Date(p.fecha).toLocaleString("es-CL");
+    const badge = p.estado === "pendiente" 
+      ? `<a class="btn peligro" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Pendiente</a>`
+      : p.estado === "despachado"
+      ? `<a class="btn exito" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Despachado</a>`
+      : `<a class="btn secundario" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Cancelado</a>`;
+
+    return `
+      <article class="tarjeta">
+        <div class="contenido">
+          <h4>${p.id}</h4>
+          <p class="info">${fecha} · ${p.comprador.nombres} ${p.comprador.apellidos} (${p.comprador.correo})</p>
+          <p><small>Envío: ${p.envio.direccion}, ${p.envio.comuna}, ${p.envio.region}</small></p>
+          <p><strong>Total:</strong> ${formatoPrecio(p.total)}</p>
+          <div>${badge} <a class="btn secundario" href="pedidos-detalles.html?id=${encodeURIComponent(p.id)}">Ver detalle</a></div>
+        </div>
+      </article>`;
+  }).join("");
+}
+
+function cargarPedidoDetalle(){
+  if (!location.pathname.endsWith("/admin/pedidos-detalles.html")) return;
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  const cont = document.getElementById("detallePedido");
+  const titulo = document.getElementById("tituloPedido");
+  const btn = document.getElementById("btnMarcarDespachado");
+  if (!id || !cont || !btn) return;
+
+  const pedidos = obtenerPedidos();
+  const ped = pedidos.find(p => p.id === id);
+  if (!ped){ cont.innerHTML = `<p class="info">Pedido no encontrado.</p>`; btn.style.display="none"; return; }
+
+  if (titulo) titulo.textContent = `Pedido ${ped.id} — ${ped.estado.toUpperCase()}`;
+
+  const prods = obtener("productos", []);
+  const filas = ped.items.map(it=>{
+    const p = prods.find(x=>x.codigo===it.codigo);
+    const nombre = p ? p.nombre : it.codigo;
+    return `<div class="item-carrito">
+      <div><strong>${nombre}</strong><br><small>${it.codigo}</small></div>
+      <div>${formatoPrecio(it.precio)}</div>
+      <div>x${it.cantidad}</div>
+    </div>`;
+  }).join("");
+
+  cont.innerHTML = `
+    <article class="tarjeta">
+      <div class="contenido">
+        <p><strong>Fecha:</strong> ${new Date(ped.fecha).toLocaleString("es-CL")}</p>
+        <p><strong>Cliente:</strong> ${ped.comprador.nombres} ${ped.comprador.apellidos} — ${ped.comprador.correo}</p>
+        <p><strong>Envío:</strong> ${ped.envio.direccion}, ${ped.envio.comuna}, ${ped.envio.region}</p>
+        <p><strong>Total:</strong> ${formatoPrecio(ped.total)}</p>
+        <h4>Ítems</h4>
+        ${filas}
+      </div>
+    </article>
+  `;
+
+  const actualizarBoton = ()=>{
+    if (ped.estado === "pendiente") {
+      btn.textContent = "Marcar como despachado";
+      btn.className = "btn exito";
+      btn.disabled = false;
+      btn.style.display = "";
+    } else if (ped.estado === "despachado") {
+      btn.textContent = "Pedido despachado";
+      btn.className = "btn secundario";
+      btn.disabled = true;
+      btn.style.display = "";
+    } else { // cancelado
+      btn.textContent = "Pedido cancelado";
+      btn.className = "btn secundario";
+      btn.disabled = true;
+      btn.style.display = "";
+    }
+  };
+  actualizarBoton();
+
+  if (!btn.dataset.bind){
+    btn.addEventListener("click", ()=>{
+      if (ped.estado !== "pendiente") return;
+      ped.estado = "despachado";
+      guardarPedidos(pedidos);
+      actualizarBoton();
+      alert("Pedido marcado como despachado.");
+    });
+    btn.dataset.bind = "1";
+  }
+}
+
 
 
 /* =============== FORMATO =============== */
@@ -969,6 +1195,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Si estamos en pedidos.html
+  if (location.pathname.endsWith("/admin/pedidos.html")) {
+    // guard de rol ya corre arriba
+    const filtro = document.getElementById("filtroPedidos");
+    if (filtro && !filtro.dataset.bind){
+      filtro.addEventListener("change", renderPedidos);
+      filtro.dataset.bind = "1";
+    }
+    renderPedidos();
+  }
+
   // Formularios
   inicializarRegistro();
   inicializarLogin();
@@ -977,6 +1214,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Detalle de producto
   cargarDetalle();
+
+  // Detalles de pedido 
+  cargarPedidoDetalle();
 
   // Carrito
   renderCarrito();
@@ -1038,6 +1278,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     btnPagar.dataset.bind = "1";
   }
+
+  // Mis compras
+  renderMisCompras();
 
   // Menu movil
   inicializarMenuLateral();
