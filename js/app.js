@@ -5,13 +5,106 @@ function obtener(key, defecto){
 function guardar(key, valor){
   localStorage.setItem(key, JSON.stringify(valor));
 }
+function esAdmin(){ 
+  const u=usuarioActual(); return !!(u && u.tipoUsuario==="admin"); }
+function esVendedor(){ 
+  const u=usuarioActual(); return !!(u && u.tipoUsuario==="vendedor"); }
 
-/* =============== SEMILLA (primera carga) =============== */
+/* =============== Primera carga =============== */
 if (!localStorage.getItem("productos") && Array.isArray(window.productosBase)) {
   guardar("productos", window.productosBase);
 }
 if (!localStorage.getItem("usuarios")) guardar("usuarios", []);
 if (!localStorage.getItem("carrito"))  guardar("carrito", []);
+
+
+/* =============== REGISTRO: regiones/comunas + submit =============== */
+function inicializarRegistro(){
+  const form = document.getElementById("formRegistro");
+  if (!form) return; // no estás en registro.html
+
+  // Popular regiones/comunas usando la variable global 'regiones'
+  const selRegion = document.getElementById("region");
+  const selComuna = document.getElementById("comuna");
+
+  if (selRegion && selComuna) {
+    if (typeof regiones === "undefined" || !Array.isArray(regiones)) {
+      console.warn("No se encontró 'regiones'. Asegúrate de cargar datos.js antes de app.js.");
+    } else {
+      selRegion.innerHTML = regiones.map(r => `<option>${r.nombre}</option>`).join("");
+      const actualizarComunas = () => {
+        const r = regiones.find(x => x.nombre === selRegion.value);
+        selComuna.innerHTML = (r?.comunas || []).map(c => `<option>${c}</option>`).join("");
+      };
+      selRegion.addEventListener("change", actualizarComunas);
+      actualizarComunas(); // primera carga
+    }
+  }
+
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+
+    const run             = document.getElementById("run").value.trim();
+    const nombres         = document.getElementById("nombres").value.trim();
+    const apellidos       = document.getElementById("apellidos").value.trim();
+    const correo          = document.getElementById("correo").value.trim();
+    const fechaNacimiento = document.getElementById("fechaNacimiento").value;
+    const tipoUsuario     = document.getElementById("tipoUsuario").value;
+    const region          = document.getElementById("region")?.value || "";
+    const comuna          = document.getElementById("comuna")?.value || "";
+    const direccion       = document.getElementById("direccion").value.trim();
+    const pass            = document.getElementById("password").value;
+    const pass2           = document.getElementById("password2").value;
+    const referido        = document.getElementById("referido")?.value.trim() || "";
+
+    // limpiar errores
+    ["errRun","errNombres","errApellidos","errCorreo","errFecha","errTipo","errRegion","errComuna","errDireccion","errPass","errPass2","msgRegistro"]
+      .forEach(id=>{ const el = document.getElementById(id); if (el) el.textContent = ""; });
+
+    let ok = true;
+    if(!validarRun(run))                           { document.getElementById("errRun").textContent = "RUN inválido."; ok=false; }
+    if(!nombres)                                   { document.getElementById("errNombres").textContent = "Requerido."; ok=false; }
+    if(!apellidos)                                 { document.getElementById("errApellidos").textContent = "Requerido."; ok=false; }
+    if(!esCorreoPermitido(correo) || correo.length>100){
+                                                     document.getElementById("errCorreo").textContent = "Correo no permitido o supera 100 caracteres."; ok=false;
+                                                   }
+    if(!esMayorDe18(fechaNacimiento))              { document.getElementById("errFecha").textContent = "Debés ser mayor de 18 años."; ok=false; }
+    if(!tipoUsuario)                               { document.getElementById("errTipo").textContent = "Seleccioná un tipo."; ok=false; }
+    if(selRegion && !region)                       { document.getElementById("errRegion").textContent = "Seleccioná una región."; ok=false; }
+    if(selComuna && !comuna)                       { document.getElementById("errComuna").textContent = "Seleccioná una comuna."; ok=false; }
+    if(!direccion || direccion.length>300)         { document.getElementById("errDireccion").textContent = "Dirección requerida (máx 300)."; ok=false; }
+    if(pass.length<4 || pass.length>10)            { document.getElementById("errPass").textContent = "Contraseña 4 a 10 caracteres."; ok=false; }
+    if(pass!==pass2)                               { document.getElementById("errPass2").textContent = "Las contraseñas no coinciden."; ok=false; }
+
+    const usuarios = obtener("usuarios", []);
+    if(usuarios.some(u => u.correo.toLowerCase()===correo.toLowerCase())){
+      document.getElementById("errCorreo").textContent = "El correo ya existe."; ok=false;
+    }
+    if(usuarios.some(u => u.run.toUpperCase()===run.toUpperCase())){
+      document.getElementById("errRun").textContent = "El RUN ya existe."; ok=false;
+    }
+    if(!ok) return;
+
+    // Referidos
+    if (referido){
+      const refUser = usuarios.find(u => (u.codigoReferido||"").toLowerCase() === referido.toLowerCase());
+      if (refUser){
+        refUser.puntosLevelUp = (refUser.puntosLevelUp||0) + 50;
+      }
+    }
+    const codigoReferido = "REF" + Math.random().toString(36).substring(2,8).toUpperCase();
+    const descuentoDuoc  = correo.toLowerCase().endsWith("@duoc.cl");
+
+    const nuevo = { run, nombres, apellidos, correo, fechaNacimiento, tipoUsuario, region, comuna, direccion,
+                    pass, descuentoDuoc, puntosLevelUp:0, codigoReferido, compras:[] };
+    usuarios.push(nuevo);
+    guardar("usuarios", usuarios);
+
+    const msg = document.getElementById("msgRegistro");
+    if (msg) msg.textContent = "¡Cuenta creada! Ahora podés ingresar.";
+    form.reset();
+  });
+}
 
 /* =============== SESIÓN / NAV =============== */
 function usuarioActual(){
@@ -22,15 +115,23 @@ function usuarioActual(){
 }
 function actualizarNavegacion(){
   const u = usuarioActual();
-  const linkRegistro = document.getElementById("linkRegistro");
-  const linkLogin    = document.getElementById("linkLogin");
-  const linkSalir    = document.getElementById("linkSalir");
-  const linkAdmin    = document.getElementById("linkAdmin");
+  const linkRegistro  = document.getElementById("linkRegistro");
+  const linkLogin     = document.getElementById("linkLogin");
+  const linkSalir     = document.getElementById("linkSalir");
+  const linkAdmin     = document.getElementById("linkAdmin");
+  const linkVendedor  = document.getElementById("linkVendedor");
+  const linkMiCuenta  = document.getElementById("linkMiCuenta");
+  const btnPerfilDesk = document.getElementById("btnPerfilDesk");
 
-  if (linkRegistro) linkRegistro.classList.toggle("oculto", !!u);
-  if (linkLogin)    linkLogin.classList.toggle("oculto", !!u);
-  if (linkSalir)    linkSalir.classList.toggle("oculto", !u);
-  if (linkAdmin)    linkAdmin.classList.toggle("oculto", !(u && u.tipoUsuario === "admin"));
+  if (linkRegistro)  linkRegistro.classList.toggle("oculto", !!u);
+  if (linkLogin)     linkLogin.classList.toggle("oculto", !!u);
+  if (linkSalir)     linkSalir.classList.toggle("oculto", !u);
+
+  if (linkAdmin)     linkAdmin.classList.toggle("oculto", !(u && u.tipoUsuario === "admin"));
+  if (linkVendedor)  linkVendedor.classList.toggle("oculto", !(u && u.tipoUsuario === "vendedor")); 
+
+  if (linkMiCuenta)  linkMiCuenta.classList.toggle("oculto", !u);
+  if (btnPerfilDesk) btnPerfilDesk.classList.toggle("oculto", !u);
 
   actualizarContadorCarrito();
 }
@@ -53,14 +154,14 @@ function renderDestacados(){
         <h3>${p.nombre}</h3>
         <p class="precio">${formatoPrecio(p.precio)}</p>
         <div class="acciones">
-          <a class="btn secundario" href="#ver-${encodeURIComponent(p.codigo)}">Ver</a>
+          <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
           <button class="btn primario" data-agregar="${p.codigo}">Añadir</button>
         </div>
       </div>
     </article>
   `).join("");
 
-  // Delegación: un solo listener, permanente
+  // AGREGAR LOS PRODUCTOS AL CARRITO
   if (!cont.dataset.bind) {
     cont.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-agregar]");
@@ -77,7 +178,7 @@ function obtenerCarrito(){ return obtener("carrito", []); }
 function guardarCarrito(c){
   guardar("carrito", c);
   actualizarContadorCarrito();
-  renderCarrito(); // no hace nada si no existe la UI del carrito
+  renderCarrito(); 
 }
 function agregarAlCarrito(codigo, cantidad=1){
   const prods = obtener("productos", []);
@@ -97,7 +198,6 @@ function actualizarContadorCarrito(){
   if(el) el.textContent = total;
 }
 function renderCarrito(){
-  // opcional: sólo si en alguna página pusieras #listaCarrito
   const cont = document.getElementById("listaCarrito");
   if(!cont) return;
   const carrito = obtenerCarrito();
@@ -121,7 +221,9 @@ function renderCarrito(){
   if(totalEl) totalEl.textContent = formatoPrecio(total);
 }
 
-/* =============== MENÚ LATERAL (MÓVIL) =============== */
+/* PANELES */
+
+/* =============== MENÚ LATERAL (MOVIL) =============== */
 function inicializarMenuLateral(){
   const btn = document.getElementById("btnMenu");
   const panel = document.getElementById("menuLateral");
@@ -130,7 +232,7 @@ function inicializarMenuLateral(){
   const lista = document.getElementById("menuLista");
   if (!btn || !panel || !navDesk || !lista) return;
 
-  // Clonar enlaces sólo una vez
+  // Clonar enlaces
   if (!lista.dataset.clonado) {
     lista.innerHTML = "";
     navDesk.querySelectorAll("a").forEach(a => {
@@ -170,12 +272,90 @@ function inicializarMenuLateral(){
   }
 }
 
+/* =============== MI CUENTA (DIALOG) =============== */
+function abrirPanelCuenta(){
+  const u = usuarioActual();
+  const panel = document.getElementById("panelCuenta");
+  const cortina = document.getElementById("cortinaCuenta");
+  if (!u || !panel || !cortina) return;
+
+  asegurarCodigoReferido(u);
+  guardarUsuarioActual(u);
+
+  // Llenar campos
+  const nom = document.getElementById("cuentaNombre");
+  const cor = document.getElementById("cuentaCorreo");
+  const cod = document.getElementById("cuentaCodigoReferido");
+  const pts = document.getElementById("cuentaPuntos");
+  const niv = document.getElementById("cuentaNivel");
+  if (nom) nom.textContent = `${u.nombres||""} ${u.apellidos||""}`.trim() || "—";
+  if (cor) cor.textContent = u.correo || "—";
+  if (cod) cod.value = u.codigoReferido;
+  if (pts) pts.textContent = u.puntosLevelUp ?? 0;
+  if (niv) niv.textContent = calcularNivel(u.puntosLevelUp || 0);
+
+  // FUNCION PARA COPIAR EL CODIGO DE REFERIDO
+  const btnCopiar = document.getElementById("btnCopiarCodigo");
+  if (btnCopiar && !btnCopiar.dataset.bind) {
+    btnCopiar.addEventListener("click", ()=>{
+      const inp = document.getElementById("cuentaCodigoReferido");
+      inp.select();
+      document.execCommand("copy");
+      btnCopiar.textContent = "¡Copiado!";
+      setTimeout(()=> btnCopiar.textContent = "Copiar", 1200);
+    });
+    btnCopiar.dataset.bind = "1";
+  }
+
+  // Cerrar panel
+  const cerrar = ()=>{
+    panel.classList.remove("panel-cuenta--abierto");
+    panel.setAttribute("aria-hidden", "true");
+    cortina.hidden = true;
+  };
+  const btnCerrar = document.getElementById("btnCerrarCuenta");
+  if (btnCerrar && !btnCerrar.dataset.bind) {
+    btnCerrar.addEventListener("click", cerrar);
+    btnCerrar.dataset.bind = "1";
+  }
+  if (!cortina.dataset.bind) {
+    cortina.addEventListener("click", cerrar);
+    document.addEventListener("keydown", (e)=>{
+      if (e.key === "Escape" && panel.classList.contains("panel-cuenta--abierto")) cerrar();
+    });
+    cortina.dataset.bind = "1";
+  }
+
+  // Salir desde el panel
+  const btnSalir = document.getElementById("btnSalirCuenta");
+  if (btnSalir && !btnSalir.dataset.bind) {
+    btnSalir.addEventListener("click", ()=>{
+      localStorage.removeItem("sesion");
+      actualizarNavegacion();
+      cerrar();
+
+      // REDIRECCION SEGUN USUARIO 
+      if (location.pathname.includes("/admin/")) {
+        window.location.href = "../index.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+    btnSalir.dataset.bind = "1";
+  }
+
+  // Abrir panel
+  panel.classList.add("panel-cuenta--abierto");
+  panel.setAttribute("aria-hidden", "false");
+  cortina.hidden = false;
+}
+
 /* =============== INICIALIZACIÓN =============== */
 document.addEventListener("DOMContentLoaded", () => {
-  // Nav (cambiar enlaces por sesión + contador inicial)
+  // Nav / Sesion
   actualizarNavegacion();
 
-  // Salir de sesión (si existe el enlace)
+  // Salir de sesión
   const linkSalir = document.getElementById("linkSalir");
   if(linkSalir){
     linkSalir.addEventListener("click", (e)=>{
@@ -186,8 +366,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Botón perfil (desktop)
+  const btnPerfilDesk = document.getElementById("btnPerfilDesk");
+  if (btnPerfilDesk && !btnPerfilDesk.dataset.bind) {
+    btnPerfilDesk.addEventListener("click", ()=>{
+      if (!usuarioActual()) return; // por seguridad
+      abrirPanelCuenta();
+    });
+    btnPerfilDesk.dataset.bind = "1";
+  }
+
   // Index
   renderDestacados();
+
+  // Formularios
+  inicializarRegistro();
 
   // Menú móvil
   inicializarMenuLateral();

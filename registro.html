@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="img/LOGO.png" type="image/png">
-  <title>Level-Up Gamer | Inicio</title>
+  <title>Registro | Level-Up Gamer</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/estilos.css" />
   <script defer src="js/datos.js"></script>
@@ -36,7 +36,7 @@
       <a id="linkLogin" href="login.html">Ingresar</a>
       <a class="carrito" href="productos.html#carrito">🛒 <span id="contadorCarrito">0</span></a>
       
-      <!-- Botón perfil (escritorio) -->
+      <!-- Botón perfil (solo escritorio) -->
       <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
         <img src="img/imgPerfil.png" alt="" loading="lazy">
       </button>
@@ -57,36 +57,82 @@
 
   <main class="principal">
 
-    <section class="hero">
-      <div class="hero-texto">
-        <h1 class="titulo">Sube de nivel tu setup</h1>
-        <p class="subtitulo">Consolas, periféricos y hardware con <strong>descuento Level-Up</strong> para correos DUOC.</p>
-        <div class="acciones">
-          <a class="btn primario" href="productos.html">Ver catálogo</a>
-          <a class="btn secundario" href="blogs.html">Novedades</a>
-        </div>
+<section class="formulario-contenedor">
+  <h1>Crear cuenta</h1>
+  <form id="formRegistro" novalidate class="formulario">
+    <div class="fila">
+      <label for="run">RUN (sin puntos ni guión)</label>
+      <input id="run" maxlength="9" placeholder="19011022K" autocomplete="off" required>
+      <small class="pista">Ej: 19011022K</small>
+      <div class="error" id="errRun"></div>
+    </div>
+    <div class="fila">
+      <label for="nombres">Nombres</label>
+      <input id="nombres" maxlength="50" required>
+      <div class="error" id="errNombres"></div>
+    </div>
+    <div class="fila">
+      <label for="apellidos">Apellidos</label>
+      <input id="apellidos" maxlength="100" required>
+      <div class="error" id="errApellidos"></div>
+    </div>
+    <div class="fila">
+      <label for="correo">Correo</label>
+      <input id="correo" type="email" maxlength="100" required placeholder="usuario@duoc.cl / @gmail.com">
+      <small class="pista">Correos permitidos: @duoc.cl, @profesor.duoc.cl, @gmail.com</small>
+      <div class="error" id="errCorreo"></div>
+    </div>
+    <div class="fila">
+      <label for="fechaNacimiento">Fecha de Nacimiento</label>
+      <input id="fechaNacimiento" type="date" required>
+      <small class="pista">Solo mayores de 18 años</small>
+      <div class="error" id="errFecha"></div>
+    </div>
+    <div class="fila">
+      <label for="tipoUsuario">Tipo de Usuario</label>
+      <select id="tipoUsuario" required>
+        <option value="cliente">Cliente</option>
+        <option value="vendedor">Vendedor</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <div class="error" id="errTipo"></div>
+    </div>
+    <div class="fila">
+      <label for="region">Región</label>
+      <select id="region" required></select>
+      <div class="error" id="errRegion"></div>
+    </div>
+    <div class="fila">
+      <label for="comuna">Comuna</label>
+      <select id="comuna" required></select>
+      <div class="error" id="errComuna"></div>
+    </div>
+    <div class="fila">
+      <label for="direccion">Dirección</label>
+      <input id="direccion" maxlength="300" required>
+      <div class="error" id="errDireccion"></div>
+    </div>
+    <div class="fila dos">
+      <div>
+        <label for="password">Contraseña</label>
+        <input id="password" type="password" minlength="4" maxlength="10" required>
+        <div class="error" id="errPass"></div>
       </div>
-    </section>
-
-    <section class="destacados">
-      <h2 class="seccion-titulo">Destacados</h2>
-      <div id="gridDestacados" class="grid tarjetas"></div>
-    </section>
-
-    <section class="beneficios">
-      <article>
-        <h3>Gamificación</h3>
-        <p>Ganá <strong>puntos LevelUp</strong> por referidos y compras. ¡Canjealos por descuentos!</p>
-      </article>
-      <article>
-        <h3>Soporte técnico</h3>
-        <p>¿Problemas con tu equipo? <a class="whatsapp" href="https://wa.me/56911111111" target="_blank">Escribinos por WhatsApp</a>.</p>
-      </article>
-      <article>
-        <h3>Eventos</h3>
-        <p>Sumate a torneos y meetups en todo Chile. Pronto: mapa de eventos interactivo.</p>
-      </article>
-    </section>
+      <div>
+        <label for="password2">Confirmar</label>
+        <input id="password2" type="password" minlength="4" maxlength="10" required>
+        <div class="error" id="errPass2"></div>
+      </div>
+    </div>
+    <div class="fila">
+      <label for="referido">Código de Referido (opcional)</label>
+      <input id="referido" maxlength="20" placeholder="GAMER123">
+    </div>
+    <button class="btn primario" type="submit">Crear cuenta</button>
+    <p class="info">¿Ya tenés cuenta? <a href="login.html">Ingresar</a></p>
+    <p id="msgRegistro" class="exito"></p>
+  </form>
+</section>
 
   </main>
   <footer class="pie">
@@ -98,7 +144,7 @@
     </p>
   </footer>
 
-  <!-- Panel Mi Cuenta -->
+  <!-- Panel Mi Cuenta (desktop = derecha, móvil = izquierda) -->
   <aside id="panelCuenta" class="panel-cuenta" aria-hidden="true">
     <div class="panel-cuenta__cab">
       <h3>Mi cuenta</h3>
@@ -112,7 +158,6 @@
 
       <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
       <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
-      <a class="btn secundario" href="perfil.html">Editar Perfil</a>
 
       <div class="panel-cuenta__bloque">
         <label><strong>Código de referido</strong></label>
@@ -120,7 +165,7 @@
           <input id="cuentaCodigoReferido" readonly>
           <button id="btnCopiarCodigo" class="btn secundario" type="button">Copiar</button>
         </div>
-        <small class="pista">Comparte este código. Si alguien se registra con él, ganás puntos.</small>
+        <small class="pista">Compartí este código. Si alguien se registra con él, ganás puntos.</small>
       </div>
 
       <div class="panel-cuenta__bloque">
