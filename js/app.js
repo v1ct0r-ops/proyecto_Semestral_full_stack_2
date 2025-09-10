@@ -1,3 +1,6 @@
+
+
+
 /* =============== UTILIDADES =============== */
 function obtener(key, defecto){
   try { return JSON.parse(localStorage.getItem(key)) ?? defecto; } catch { return defecto; }
