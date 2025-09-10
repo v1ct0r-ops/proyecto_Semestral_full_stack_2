@@ -63,16 +63,19 @@ formulario.addEventListener("submit", function(e) {
     e.preventDefault();
     return;
   }
-  // Guarda mensaje en localStorage
+  // Guarda solicitud en localStorage (clave 'solicitudes', campo 'descripcion')
+  const ahora = new Date();
   const mensaje = {
     nombre: nombre.value,
     correo: correo.value,
-    contenido: contenido.value,
-    fecha: new Date().toLocaleString()
+    descripcion: contenido.value, // <--- usa descripcion
+    fecha: ahora.toLocaleDateString(),
+    hora: ahora.toLocaleTimeString(),
+    estado: "pendiente"
   };
-  let historial = JSON.parse(localStorage.getItem("mensajesContacto")) || [];
-  historial.push(mensaje);
-  localStorage.setItem("mensajesContacto", JSON.stringify(historial));
+  let solicitudes = JSON.parse(localStorage.getItem("solicitudes")) || [];
+  solicitudes.push(mensaje);
+  localStorage.setItem("solicitudes", JSON.stringify(solicitudes));
 
   //  en consola los datos enviados
   console.log("Nombre:", nombre.value);
