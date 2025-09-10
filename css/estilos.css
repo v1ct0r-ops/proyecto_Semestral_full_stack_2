@@ -1,3 +1,4 @@
+
 :root{
   --fondo:#000000;
   --texto:#FFFFFF;
@@ -358,7 +359,12 @@ body.menu-abierto{
   background:#0f1628;
 }
 
+.btn-estado {
+  font-size: 1.15rem;
+  padding: 2px 14px;
+}
 
+/**/
 
 
 /* DESTACADOS */
@@ -397,6 +403,11 @@ body.menu-abierto{
 
 .seccion-titulo{
   margin:8px 0 16px;
+}
+
+
+#listaSolicitud .tarjeta {
+  margin-bottom: 20px;
 }
 
 
