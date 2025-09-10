@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/estilos.css" />
   <script defer src="../js/datos.js"></script>
   <script defer src="../js/app.js"></script>
+  <script defer src="../js/solicitud.js"></script>
 </head>
 <body>
     <header class="encabezado">
@@ -51,22 +52,21 @@
         <a href="admin.html">Inicio</a>
         <a href="productos.html">Productos</a>
         <a href="usuarios.html">Usuarios</a> <!-- Se oculta por JS si es vendedor -->
-        <a href="pedidos.html" class="activo">Pedidos</a>
-        <a href="solicitud.html">solicitud</a>
+        <a href="pedidos.html">Pedidos</a>
+        <a href="solicitud.html" class="activo">solicitud</a>
       </aside>
 
-      <div class="panel">
-        <h1>Pedidos</h1>
+      <div class="panel-solicitud">
+        <h1>Solicitud</h1>
         <div class="filtros" style="margin-bottom:12px;">
-          <select id="filtroPedidos">
+          <select id="filtroSoliciutudes">
             <option value="">Todos</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="despachado">Despachados</option>
-            <option value="cancelado">Cancelados</option>
+            <option value="pendiente">pendiente</option>
+            <option value="completado">completado</option>
           </select>          
         </div>
 
-        <div id="listaPedidos" class="tarjetas"></div>
+  <div id="listaSolicitud" class="tarjeta-solicitud tarjetas"></div>
       </div>
     </section>
   </main>
@@ -89,6 +89,7 @@
 
       <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
       <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
+      <p><strong>Solicitud:</strong> <span id="cuentaCorreo"></span></p>
       <a class="btn secundario" href="../perfil.html">Editar Perfil</a>
 
       <div class="panel-cuenta__bloque">
@@ -116,3 +117,6 @@
 
 </body>
 </html>
+
+
+
