@@ -1,91 +1,79 @@
-# Level-Up Gamer Store - Proyecto Semestral Full Stack 2
+# Level-Up Gamer
 
 ## Descripción
-Level-Up Gamer Store es una plataforma web para la venta de productos gamers, con funcionalidades para usuarios y administradores. Permite registro, autenticación, gestión de productos, blogs, carrito de compras, contacto y panel de administración.
+Tienda web de videojuegos y hardware gamer con panel de administración para gestión de productos, usuarios, pedidos y solicitudes de contacto. Permite a los usuarios explorar productos, realizar compras y enviar solicitudes de soporte.
+
+
+## Uso
+- Abre `index.html` en tu navegador para ver la tienda principal.
+- Accede a `/admin/` para el panel de administración (solo admin/vendedor).
+- Usa Live Server para desarrollo y recarga automática.
 
 ## Estructura del Proyecto
-
 ```
 proyecto_Semestral_full_stack_2/
-│   index.html                # Página principal
-│   blogs.html                # Listado de blogs/novedades
-│   blog-detalle-1.html       # Detalle de blog 1
-│   blog-detalle-2.html       # Detalle de blog 2
-│   contacto.html             # Formulario de contacto
-│   login.html                # Login de usuario
-│   registro.html             # Registro de usuario
-│   nosotros.html             # Información de la empresa
-│   README.md                 # Documentación del proyecto
 │
-├── admin/                    # Sección de administración
-│     HomeAdminstrador-1.html
-│     ProductoAdministrador-2.html
-│
-├── css/                      # Hojas de estilo
-│     estilos.css
-│     blogs.css
-│     contactos.css
-│     nosotros.css
-│     admin.css/
-│
-├── img/                      # Imágenes y recursos gráficos
-│     LOGO.png
-│     ...
-│
-├── js/                       # Scripts JavaScript
-│     app.js
-│     contacto.js
-│     datos.js
-│     jsAdmin/
+├── admin/                     # Panel de administración
+│   ├── admin.html
+│   ├── editar-producto.html
+│   ├── HomeAdminstrador-1.html
+│   ├── pedidos-detalles.html
+│   ├── pedidos.html
+│   ├── producto-nuevo.html
+│   ├── ProductoAdministrador-2.html
+│   ├── productos.html
+│   ├── solicitud-detalle.html
+│   ├── solicitud.html
+│   ├── usuario-nuevo.html
+│   └── usuarios.html
+├── css/                       # Hojas de estilo
+│   ├── blogs.css
+│   ├── contactos.css
+│   ├── estilos.css
+│   └── nosotros.css
+├── img/                       # Imágenes
+│   ├── 8-verthing-k_pBB5wJtaU-unsplash.jpg
+│   ├── admin.img/             # (vacío)
+│   ├── ella-don-fK5Oomnc-Wk-unsplash (1).jpg
+│   ├── ella-don-K4kfIEhj4GM-unsplash.jpg
+│   ├── imgPerfil.png
+│   ├── LOGO.png
+│   ├── placeholder.jpg
+│   └── samsung-memory-XB4F9V5UleA-unsplash.jpg
+├── js/                        # Scripts JavaScript
+│   ├── app.js
+│   ├── contacto.js
+│   ├── datos.js
+│   └── solicitud.js
+├── blog-detalle-1.html
+├── blog-detalle-2.html
+├── blogs.html
+├── contacto.html
+├── index.html
+├── login.html
+├── misCompras.html
+├── nosotros.html
+├── perfil.html
+├── producto.html
+├── productos.html
+├── README.md
+├── registro.html
+└── ...
 ```
 
-## Principales Funcionalidades
+## Tecnologías Utilizadas
+- HTML5
+- CSS
+- JavaScript 
+- LocalStorage (persistencia en navegador)
 
-- Registro y autenticación de usuarios
-- Visualización y filtrado de catálogo de productos
-- Carrito de compras persistente 
-- Gestión de productos (solo administrador)
-- Publicación y visualización de blogs/novedades
-- Formulario de contacto validado y persistente (localStorage)
-- Panel de administración exclusivo
-
-
-## Detalles Técnicos
-
-### Tecnologías Utilizadas
-- HTML5, CSS3 (estructura modular, responsive, fuentes Google Fonts)
-- JavaScript (validación de formularios, manejo de eventos, localStorage, manipulación DOM)
-- Estructura de carpetas para separación de vistas, estilos, scripts y recursos
-
-### Organización de Archivos
-- **/admin/**: Vistas y scripts para administración de productos y blogs
-- **/css/**: Hojas de estilo separadas por sección
-- **/img/**: Recursos gráficos y logotipos
-- **/js/**: Scripts generales y específicos (contacto, datos, administración)
-
-### Principales Scripts
-- `app.js`: Lógica general de la aplicación (navegación, carrito, autenticación)
-- `contacto.js`: Validación y almacenamiento de mensajes del formulario de contacto
-- `datos.js`: Manejo de datos de productos y blogs
-- `/js/jsAdmin/`: Scripts para funcionalidades administrativas
-
-### Persistencia Local
-- Uso de localStorage para carrito de compras y mensajes de contacto
-- Los datos persisten entre sesiones del usuario
-
-### Estilos
-- Uso de CSS modular para mantener el código organizado y facilitar el mantenimiento
-- Responsive design para adaptarse a distintos dispositivos
+## Requisitos previos
+- Navegador web moderno (Chrome, Firefox, Edge, etc.)
+- (Opcional) Visual Studio Code para edición
+- (Opcional) Extensión Live Server para desarrollo
 
 
 
-### Notas de Desarrollo
-- El proyecto está preparado para ser extendido fácilmente (nuevas vistas, scripts o estilos)
-- Se recomienda mantener la estructura modular para futuras mejoras
 
----
-Desarrollado por el equipo Level-Up Gamer — 2025.
 
-## Créditos
 
-Desarrollado por el equipo Level-Up Gamer — 2025.
