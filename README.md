@@ -67,4 +67,13 @@ proyecto_Semestral_full_stack_2/
 - JavaScript 
 - LocalStorage (persistencia en navegador)
 
+## Requisitos previos
+- Navegador web moderno (Chrome, Firefox, Edge, etc.)
+- (Opcional) Visual Studio Code para edición
+- (Opcional) Extensión Live Server para desarrollo
+
+
+
+
+
 
