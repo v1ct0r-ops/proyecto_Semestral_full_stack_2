@@ -68,19 +68,3 @@ proyecto_Semestral_full_stack_2/
 - LocalStorage (persistencia en navegador)
 
 
-## Diagrama de Estructura y Flujo
-
-```mermaid
-flowchart TD
-    A[Usuario] -->|Navegador| B(index.html)
-    B --> C[HTML/CSS/JS]
-    C --> D[LocalStorage]
-    C --> E[Panel Admin (admin/)]
-    E --> F[Gestión de productos]
-    E --> G[Gestión de usuarios]
-    E --> H[Gestión de pedidos]
-    E --> I[Gestión de solicitudes]
-    A -->|Formulario| J(contacto.html)
-    J --> D
-```
-
