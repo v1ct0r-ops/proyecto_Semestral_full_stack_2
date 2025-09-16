@@ -221,7 +221,7 @@ function actualizarNavegacion(){
 
 /* =============== PUNTOS / NIVELES + COMPRAS =============== */
 const VALOR_PUNTO = 10;              // 1 punto = $10 CLP de descuento
-const TOPE_DESC_POR_PUNTOS = 0.20;   // Máximo 20% del total usando puntos (guardado por si luego lo usas)
+const TOPE_DESC_POR_PUNTOS = 0.20;   // Máximo 20% del total usando puntos
 
 function asegurarCodigoReferido(usuario){
   if (!usuario.codigoReferido) {
