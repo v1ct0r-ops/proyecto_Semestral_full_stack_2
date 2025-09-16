@@ -422,7 +422,7 @@ function renderMisCompras(){
 
   const compras = Array.isArray(u.compras) ? u.compras : [];
   if (!compras.length){
-    cont.innerHTML = `<p class="info">Aún no tenés compras.</p>`;
+    cont.innerHTML = `<p class="info">Aún no tienes compras.</p>`;
     return;
   }
 
@@ -502,7 +502,7 @@ function renderMisCompras(){
         guardarPedidos(pedidos);
       }
 
-      // 2) (Opcional) No cambiamos el histórico del usuario; solo el estado global
+      // 2) No cambiamos el historial del usuario; solo el estado global
       dlg.close();
       renderMisCompras();
       alert("Pedido cancelado.");
