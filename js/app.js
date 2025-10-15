@@ -1572,3 +1572,56 @@ document.addEventListener("DOMContentLoaded", () => {
   // Menu movil
   inicializarMenuLateral();
 });
+
+// =============== SINCRONIZACIÓN CON REACT ADMIN ===============
+const REACT_ORIGIN = 'http://localhost:5173';
+
+// Escuchar mensajes del React Admin
+window.addEventListener('message', (event) => {
+  if (event.origin !== REACT_ORIGIN) return;
+
+  const { type, key, value } = event.data;
+
+  switch (type) {
+    case 'SYNC_SET':
+      localStorage.setItem(key, value);
+      console.log(`🔄 Sincronizado desde React: ${key}`);
+      break;
+    
+    case 'SYNC_REMOVE':
+      localStorage.removeItem(key);
+      console.log(`🗑️ Eliminado desde React: ${key}`);
+      break;
+    
+    case 'SYNC_REQUEST':
+      // React solicita datos del HTML
+      sendToReact('SYNC_RESPONSE', key, localStorage.getItem(key));
+      break;
+  }
+});
+
+// Enviar datos al React Admin
+function sendToReact(type, key, value) {
+  try {
+    // Intentar enviar a ventanas abiertas del React
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({ type, key, value }, REACT_ORIGIN);
+    }
+  } catch (error) {
+    console.log('No se pudo enviar al React:', error);
+  }
+}
+
+// Override de localStorage para auto-sincronizar con React
+const originalSetItem = localStorage.setItem;
+const originalRemoveItem = localStorage.removeItem;
+
+localStorage.setItem = function(key, value) {
+  originalSetItem.call(this, key, value);
+  sendToReact('SYNC_SET', key, value);
+};
+
+localStorage.removeItem = function(key) {
+  originalRemoveItem.call(this, key);
+  sendToReact('SYNC_REMOVE', key, null);
+};
