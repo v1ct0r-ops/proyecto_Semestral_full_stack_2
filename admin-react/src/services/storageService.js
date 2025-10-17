@@ -37,6 +37,56 @@ function guardarPedidos(pedidos) {
   guardar("pedidos", pedidos);
 }
 
+function obtenerBoletas() {
+  return obtener("boletas", []);
+}
+
+function guardarBoletas(boletas) {
+  guardar("boletas", boletas);
+}
+
+// =============== FUNCIONES HELPER PARA BOLETAS ===============
+function obtenerProductosDeBoletaPorPedido(pedidoId) {
+  // 1. Buscar el pedido
+  const pedidos = obtenerPedidos();
+  const pedido = pedidos.find(p => p.id === pedidoId);
+  
+  if (!pedido || !pedido.items) {
+    return [];
+  }
+
+  // 2. Buscar la información completa de cada producto
+  let productos = obtenerProductos();
+  
+  // Si no hay productos en localStorage, crearlos temporalmente
+  if (productos.length === 0) {
+    productos = [
+      { codigo: 'PS001', nombre: 'PlayStation 5', categoria: 'Consolas', precio: 599999, stock: 5 },
+      { codigo: 'XB002', nombre: 'Xbox Series X', categoria: 'Consolas', precio: 549999, stock: 3 },
+      { codigo: 'SW003', nombre: 'Nintendo Switch', categoria: 'Consolas', precio: 299999, stock: 8 }
+    ];
+    // Guardarlos para la próxima vez
+    guardarProductos(productos);
+  }
+  
+  // 3. Combinar datos del pedido (cantidad, precio) con datos del producto (nombre, etc.)
+  const productosCompletos = pedido.items.map(item => {
+    const producto = productos.find(p => p.codigo === item.codigo);
+    
+    return {
+      codigo: item.codigo,
+      nombre: producto ? producto.nombre : `Producto ${item.codigo}`,
+      categoria: producto ? producto.categoria : 'N/A',
+      cantidad: item.cantidad,
+      precioUnitario: item.precio,
+      subtotal: item.cantidad * item.precio
+    };
+  });
+
+  return productosCompletos;
+}
+
+
 // =============== FUNCIONES DE SESIÓN ===============
 function usuarioActual() {
   const sesion = obtener("sesion", null);
@@ -78,6 +128,9 @@ export const StorageService = {
   guardarUsuarios,
   obtenerPedidos,
   guardarPedidos,
+  obtenerBoletas,
+  guardarBoletas,
+  obtenerProductosDeBoletaPorPedido,
   usuarioActual,
   guardarSesion,
   cerrarSesion,
@@ -100,7 +153,10 @@ export {
   obtenerUsuarios,
   guardarUsuarios,
   obtenerPedidos,
-  guardarPedidos
+  guardarPedidos,
+  obtenerBoletas,
+  guardarBoletas,
+  obtenerProductosDeBoletaPorPedido
 };
 
 // =============== INICIALIZACIÓN ===============

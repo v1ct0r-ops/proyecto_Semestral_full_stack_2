@@ -72,6 +72,9 @@ const PaginaProductos = ({ onNavigate, onEditProduct }) => {
         case 'requests':
           onNavigate('requests');
           break;
+        case 'boletas':
+          onNavigate('boletas');
+          break;
         default:
           break;
       }

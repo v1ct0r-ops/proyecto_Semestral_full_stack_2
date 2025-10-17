@@ -579,6 +579,45 @@ input:focus,select:focus,textarea:focus{
   grid-template-columns:240px 1fr
 }
 
+/* Clase específica para boletas - aprovecha mejor el espacio */
+.boleta-container{
+  padding: 20px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.boleta-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 16px;
+}
+
+.boleta-info{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.boleta-info-item{
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 1.1rem;
+}
+
+.boleta-productos{
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 24px;
+}
+
 .menu-admin{
   background:#0b0f16;
   border-right:1px solid var(--borde);

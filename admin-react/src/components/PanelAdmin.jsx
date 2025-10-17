@@ -56,6 +56,9 @@ const PanelAdmin = ({ onNavigate }) => {
         case 'requests':
           onNavigate('requests');
           break;
+          case 'boletas':
+          onNavigate('boletas');
+          break;
         default:
           break;
       }

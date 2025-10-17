@@ -86,6 +86,9 @@ const DetallePedido = ({ onNavigate, orderId }) => {
         case 'requests':
           onNavigate('requests');
           break;
+        case 'boletas':
+          onNavigate('boletas');
+          break;
         default:
           break;
       }

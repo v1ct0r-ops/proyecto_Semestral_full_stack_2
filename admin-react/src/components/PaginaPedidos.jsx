@@ -29,17 +29,12 @@ const PaginaPedidos = ({ onNavigate, onViewOrder }) => {
             },
             items: [
               {
-                codigo: 'PROD001',
-                cantidad: 2,
-                precio: 149999
-              },
-              {
-                codigo: 'PROD002',
+                codigo: 'PS001', // PlayStation 5
                 cantidad: 1,
-                precio: 299999
+                precio: 599999
               }
             ],
-            total: 599997
+            total: 599999
           },
           {
             id: 'PED-002',
@@ -57,12 +52,12 @@ const PaginaPedidos = ({ onNavigate, onViewOrder }) => {
             },
             items: [
               {
-                codigo: 'PROD003',
+                codigo: 'XB002', // Xbox Series X
                 cantidad: 1,
-                precio: 199999
+                precio: 549999
               }
             ],
-            total: 199999
+            total: 549999
           },
           {
             id: 'PED-003',
@@ -80,12 +75,12 @@ const PaginaPedidos = ({ onNavigate, onViewOrder }) => {
             },
             items: [
               {
-                codigo: 'PROD001',
+                codigo: 'SW003', // Nintendo Switch
                 cantidad: 1,
-                precio: 149999
+                precio: 299999
               }
             ],
-            total: 149999
+            total: 299999
           }
         ];
         
@@ -147,6 +142,9 @@ const PaginaPedidos = ({ onNavigate, onViewOrder }) => {
           break;
         case 'requests':
           onNavigate('requests');
+          break;
+        case 'boletas':
+          onNavigate('boletas');
           break;
         default:
           break;

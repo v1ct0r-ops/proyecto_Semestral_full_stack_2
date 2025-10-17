@@ -10,6 +10,7 @@ function AdminSidebar({ activeMenu, onMenuChange }) {
     { id: 'users', label: 'Usuarios', showTo: 'admin' }, // Solo admin
     { id: 'orders', label: 'Pedidos', showTo: 'all' },
     { id: 'requests', label: 'Solicitudes', showTo: 'all' },
+    { id: 'boletas', label: 'Boletas', showTo: 'all' },
   ];
 
   return (

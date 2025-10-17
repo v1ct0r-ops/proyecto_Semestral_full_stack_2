@@ -10,12 +10,15 @@ import PaginaPedidos from './components/PaginaPedidos';
 import DetallePedido from './components/DetallePedido';
 import PaginaSolicitudes from './components/PaginaSolicitudes';
 import DetalleSolicitud from './components/DetalleSolicitud';
+import Boleta from './components/Boleta/Boleta';
+import DetalleBoleta from './components/Boleta/DetalleBoleta';
 
 function App() {
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'login', 'dashboard', 'products', 'newProduct', 'editProduct', 'users', 'newUser', 'orders', 'orderDetail', 'requests', 'requestDetail'
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'login', 'dashboard', 'products', 'newProduct', 'editProduct', 'users', 'newUser', 'orders', 'orderDetail', 'requests', 'requestDetail', 'boletas', 'boletaDetail'
   const [editProductCode, setEditProductCode] = useState(null); // Para almacenar el código del producto a editar
   const [selectedOrderId, setSelectedOrderId] = useState(null); // Para almacenar el ID del pedido a ver
   const [selectedRequestIndex, setSelectedRequestIndex] = useState(null); // Para almacenar el índice de la solicitud a ver
+  const [selectedBoleta, setSelectedBoleta] = useState(null); // Para almacenar la boleta seleccionada
 
   // Debug: vamos a ver qué está pasando
   console.log('🔍 App.jsx - Current view:', currentView);
@@ -37,6 +40,12 @@ function App() {
   const navigateToRequestDetail = (requestIndex) => {
     setSelectedRequestIndex(requestIndex);
     setCurrentView('requestDetail');
+  };
+
+  // Función para navegar a ver detalles de boleta
+  const navigateToBoletaDetail = (boleta) => {
+    setSelectedBoleta(boleta);
+    setCurrentView('boletaDetail');
   };
 
   if (currentView === 'login') {
@@ -92,6 +101,16 @@ function App() {
   if (currentView === 'requestDetail') {
     console.log('🔍 Renderizando Request Detail');
     return <DetalleSolicitud onNavigate={setCurrentView} requestIndex={selectedRequestIndex} />;
+  }
+
+  if (currentView === 'boletas') {
+    console.log('🔍 Renderizando Boletas');
+    return <Boleta onNavigate={setCurrentView} onViewDetail={navigateToBoletaDetail} />;
+  }
+
+  if (currentView === 'boletaDetail') {
+    console.log('🔍 Renderizando Detalle de Boleta');
+    return <DetalleBoleta boleta={selectedBoleta} onNavigate={setCurrentView} />;
   }
 
   console.log('🔍 Renderizando Home');
@@ -210,6 +229,20 @@ function App() {
           }}
         >
           📨 Solicitudes
+        </button>
+
+        <button 
+          onClick={() => setCurrentView('boletas')}
+          style={{ 
+            padding: '10px 20px', 
+            backgroundColor: '#17a2b8', 
+            color: 'white', 
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          🧾 Boletas
         </button>
 
         <button 

@@ -83,6 +83,9 @@ const DetalleSolicitud = ({ onNavigate, requestIndex }) => {
         case 'requestDetail':
           // No hacer nada, mantener en la misma página
           break;
+        case 'boletas':
+          onNavigate('boletas');
+          break;
         default:
           break;
       }
