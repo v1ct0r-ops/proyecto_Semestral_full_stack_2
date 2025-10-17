@@ -67,51 +67,7 @@ export function esVendedor() {
 
 // =============== INICIALIZACIÓN ===============
 export function inicializarDatos() {
-  // Importar datos base si no existen
-  if (!localStorage.getItem("productos")) {
-    import('../data/baseData.js').then(({ productosBase }) => {
-      guardar("productos", productosBase);
-    });
-  }
-  
-  // Crear usuarios de prueba si no existen
-  if (!localStorage.getItem("usuarios")) {
-    const usuariosPrueba = [
-      {
-        run: "12345678-9",
-        nombres: "Admin",
-        apellidos: "Principal", 
-        correo: "admin@test.com",
-        fechaNacimiento: "1990-01-01",
-        tipoUsuario: "admin",
-        region: "Región Metropolitana",
-        comuna: "Santiago",
-        direccion: "Dirección Admin 123",
-        pass: "1234",
-        codigoReferido: "ADMIN123",
-        puntos: 0,
-        nivel: "Bronce"
-      },
-      {
-        run: "98765432-1",
-        nombres: "Vendedor",
-        apellidos: "Principal",
-        correo: "vendedor@test.com", 
-        fechaNacimiento: "1992-01-01",
-        tipoUsuario: "vendedor",
-        region: "Región Metropolitana",
-        comuna: "Santiago", 
-        direccion: "Dirección Vendedor 456",
-        pass: "1234",
-        codigoReferido: "VEND123",
-        puntos: 0,
-        nivel: "Bronce"
-      }
-    ];
-    guardar("usuarios", usuariosPrueba);
-    console.log("Usuarios de prueba creados:", usuariosPrueba);
-  }
-  
-  if (!localStorage.getItem("carrito")) guardar("carrito", []);
-  if (!localStorage.getItem("resenas")) guardar("resenas", {});
+  // No escribir claves compartidas desde React.
+  // Evita sobreescribir datos existentes del sitio HTML.
+  // Mantener esta función por compatibilidad, pero sin acciones.
 }
