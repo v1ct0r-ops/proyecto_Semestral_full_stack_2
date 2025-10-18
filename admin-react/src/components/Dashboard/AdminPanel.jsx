@@ -110,14 +110,14 @@ function SideMenu({ open, onClose, onOpenAccount }) {
           <a href="../cliente/productos.html" onClick={onClose}>Productos</a>
 
           <a
-            href="#"
+            href="../cliente/index.html"
             id="linkSalirMov"
             data-bind="1"
             onClick={(e) => {
               e.preventDefault();
               localStorage.removeItem("sesion");
               onClose();
-              window.location.href = "../cliente/index.html";
+              window.location.href = "../index.html";
             }}
           >
             Salir
@@ -193,13 +193,13 @@ function AccountPanel({ user, open, onClose }) {
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="/misCompras.html">Mis compras</a>
+            <a className="btn secundario" href="../cliente/misCompras.html">Mis compras</a>
             <button
               id="btnSalirCuenta"
               className="btn"
               onClick={() => {
                 localStorage.removeItem("sesion");
-                window.location.href = "/index.html";
+                window.location.href = "../cliente/index.html";
               }}
             >
               Salir
@@ -245,6 +245,7 @@ export default function AdminPanelReact() {
       <section className="admin">
         {/* Menú lateral (desktop) */}
         <aside className="menu-admin">
+          <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>

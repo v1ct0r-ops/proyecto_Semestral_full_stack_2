@@ -674,6 +674,12 @@ function actualizarContadorCarrito(){
   if(el) el.textContent = total;
 }
 
+Object.assign(window, {
+  agregarAlCarrito,
+  quitarDelCarrito,
+  cambiarCantidad
+});
+
 /* PANELES */
 
 /* =============== MENÚ LATERAL (MOVIL) =============== */
@@ -772,7 +778,7 @@ function inicializarMenuLateral(){
 
       // Verificar si estamos dentro de /admin/
       if (location.pathname.includes("/admin/")) {
-        window.location.href = "../index.html";
+        window.location.href = "../cliente/index.html";
       } else {
         window.location.href = "index.html";
       }
@@ -895,7 +901,15 @@ function norm(txt){
 
 function renderProductos(){
   const grid = document.getElementById("gridProductos");
-  if(!grid) return;
+  if (grid && !grid.dataset.bindAdd) {
+    grid.addEventListener("click", (e) => {
+      const btn = e.target.closest('button[data-add]');
+      if (!btn) return;
+      const codigo = btn.dataset.add;
+      agregarAlCarrito(codigo); // tu función normal (no hace falta ponerla en window)
+    });
+    grid.dataset.bindAdd = "1";
+  }
 
   const texto = norm(document.getElementById("buscador")?.value || "");
   const cat = document.getElementById("filtroCategoria")?.value || "";
@@ -918,20 +932,20 @@ function renderProductos(){
     return;
   }
 
-  grid.innerHTML = prods.map(p=>`
-    <article class="tarjeta tarjeta-producto">
-      <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='img/placeholder.jpg'">
-      <div class="contenido">
-        <h3>${p.nombre}</h3>
-        <small>${p.categoria}</small>
-        <p class="precio">${formatoPrecio(precioConDescuento(p.precio))}</p>
-        <div class="acciones">
-          <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
-          <button class="btn primario" onclick="agregarAlCarrito('${p.codigo}')">Añadir</button>
-        </div>
+  grid.innerHTML = prods.map(p => `
+  <article class="tarjeta tarjeta-producto">
+    <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='img/placeholder.jpg'">
+    <div class="contenido">
+      <h3>${p.nombre}</h3>
+      <small>${p.categoria}</small>
+      <p class="precio">${formatoPrecio(precioConDescuento(p.precio))}</p>
+      <div class="acciones">
+        <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
+        <button class="btn primario" data-add="${p.codigo}" type="button">Añadir</button>
       </div>
-    </article>
-  `).join("");
+    </div>
+  </article>
+`).join("");
 }
 
 /* =============== DETALLE DE PRODUCTO + RESEÑAS =============== */
@@ -1375,11 +1389,18 @@ function inicializarEditarProducto(){
 
 
 /* PEDIDOS */
+// helper centralizado
+function idIgual(a, b){
+  const s = v => String(v).trim().toUpperCase();      // normaliza
+  return s(a) === s(b);
+}
+
 
 function estadoPedido(id){
-  const p = obtenerPedidos().find(x => x.id === id);
+  const p = obtenerPedidos().find(x => idIgual(x.id, id));
   return p ? p.estado : "pendiente";
 }
+
 
 function renderPedidos(){
   const cont = document.getElementById("listaPedidos");
@@ -1428,7 +1449,8 @@ function cargarPedidoDetalle(){
   if (!id || !cont || !btn) return;
 
   const pedidos = obtenerPedidos();
-  const ped = pedidos.find(p => p.id === id);
+  const ped = obtenerPedidos().find(p => idIgual(p.id, id));
+  // const ped = pedidos.find(p => p.id === id);
   if (!ped){ cont.innerHTML = `<p class="info">Pedido no encontrado.</p>`; btn.style.display="none"; return; }
 
   if (titulo) titulo.textContent = `Pedido ${ped.id} — ${ped.estado.toUpperCase()}`;
