@@ -1,12 +1,12 @@
 
 // ======== Datos base ========
-const categorias = [
+export const categorias = [
   "Juegos de Mesa","Accesorios","Consolas","Computadores Gamers",
   "Sillas Gamers","Mouse","Mousepad","Poleras Personalizadas","Polerones Gamers Personalizados",
   "Servivio técnico"
 ];
 
-const productosBase = [
+export const productosBase = [
   {codigo:"JM001", categoria:"Juegos de Mesa", nombre:"Catan", precio:29990, imagen:"https://deviramericas.com/wp-content/uploads/2013/06/Catan-basico-bodegon-web.jpg", descripcion:"Clásico de estrategia para 3-4 jugadores."},
   {codigo:"JM002", categoria:"Juegos de Mesa", nombre:"Carcassonne", precio:24990, imagen:"https://i0.wp.com/devir.mx/wp-content/uploads/2016/04/carcassonne-1200-components1.png?resize=600%2C600&ssl=1", descripcion:"Colocación de losetas, ideal 2-5 jugadores."},
   {codigo:"AC001", categoria:"Accesorios", nombre:"Control Xbox Series X", precio:59990, imagen:"https://cms-assets.xboxservices.com/assets/87/a9/87a938ce-d645-49f3-a556-10010071d936.jpg?n=Xbox-Wireless-Controller_Image-Hero-0_957848-1_1083x609_01.jpg", descripcion:"Ergonomía y respuesta táctil mejorada."},
@@ -21,7 +21,7 @@ const productosBase = [
 
 
 // Regiones y comunas 
-const regiones = [
+export const regiones = [
   { nombre: "Región Metropolitana", comunas: ["El Bosque", "San Bernardo", "Santiago","Providencia","Las Condes","Maipú","Puente Alto"] },
   { nombre: "Valparaíso", comunas: ["Valparaíso","Viña del Mar","Quilpué","Villa Alemana"] },
   { nombre: "Biobío", comunas: ["Concepción","Talcahuano","Chiguayante","San Pedro de la Paz"] }

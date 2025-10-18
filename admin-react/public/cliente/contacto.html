@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog: Nueva línea de productos gamers 2025 | Level-Up Gamer</title>
-    <link rel="icon" href="img/favicon.png" type="image/png">
+    <title>Contacto | Level-Up Gamer</title>
+    <link rel="icon" href="../img/favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/estilos.css" />
-    <link rel="stylesheet" href="css/blogs.css">
-    <script defer src="js/datos.js"></script>
-    <script defer src="js/app.js"></script>
+    <link rel="stylesheet" href="/src/css/contactos.css">
+    <link rel="stylesheet" href="/src/css/estilos.css" />
+    <script type="module" src="/src/site/app.js"></script>
+    <script type="module" src="/src/site/contacto.js"></script>
 </head>
+
 <body>
     <header class="encabezado">
     <a class="logo" href="index.html">
-      <img src="./img/LOGO.png" alt="LLogo de la Pagina" class="logoBase">
+      <img src="../img/LOGO.png" alt="LLogo de la Pagina" class="logoBase">
       <!-- <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span> -->
     </a>
 
@@ -31,15 +33,15 @@
       <a href="blogs.html">Blogs</a>
       <a href="nosotros.html">Nosotros</a>
       <a href="contacto.html">Contacto</a>
-      <a id="linkAdmin" class="oculto" href="admin/admin.html">Admin</a>
-      <a id="linkVendedor" class="oculto" href="admin/admin.html">Vendedor</a>
+      <a id="linkAdmin" class="oculto" href="http://localhost:5173/admin">Admin</a>
+      <a id="linkVendedor" class="oculto" href="http://localhost:5173/admin">Vendedor</a>
       <a id="linkRegistro" href="registro.html">Registro</a>
       <a id="linkLogin" href="login.html">Ingresar</a>
       <a class="carrito" href="productos.html#carrito">🛒 <span id="contadorCarrito">0</span></a>
       
       <!-- Botón perfil (escritorio) -->
       <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
-        <img src="img/imgPerfil.png" alt="" loading="lazy">
+        <img src="../img/imgPerfil.png" alt="" loading="lazy">
       </button>
     </nav>
   </header>
@@ -57,21 +59,35 @@
   <div id="cortina" class="cortina" hidden></div>
 
     <main class="principal">
-      <div class="contenedor-blogs">
-        <article class="blog-detalle">
-            <img src="img/ella-don-K4kfIEhj4GM-unsplash.jpg" alt="Nueva línea de productos" class="blog-img">
-            <h1>Nueva línea de productos gamers 2025</h1>
-            <p class="blog-detalle-desc">
-                ¡En Level-Up Gamer estamos emocionados de anunciar la llegada de nuestra nueva línea de productos para el 2025! Este año traemos lo último en consolas, accesorios y sillas gamers, seleccionados cuidadosamente para ofrecerte la mejor experiencia de juego. 
-            </p>
-            <p class="blog-detalle-desc">
-                Entre las novedades destacan los nuevos modelos de sillas ergonómicas con iluminación RGB, teclados mecánicos de alta precisión y la última generación de consolas PlayStation y Xbox. Además, incorporamos productos exclusivos para la comunidad chilena, con envíos a todo el país y soporte técnico especializado.
-            </p>
-            <p class="blog-detalle-desc">
-                ¡No te pierdas los lanzamientos y mantente atento a nuestras redes sociales para participar en sorteos y eventos especiales! En Level-Up Gamer, tu pasión es nuestro motor.
-            </p>
-        </article>
-      </div>
+        <section class="panel-contacto">
+            <h2 class="titulo-contacto">Contáctanos</h2>
+            <p class="intro-contacto">¿Tienes dudas, sugerencias o necesitas soporte? ¡Completa el formulario y únete a
+                la comunidad gamer más grande de Chile!</p>
+            <form class="form-contacto" action="#" method="post" novalidate>
+                <header class="form-header">Formulario de Contacto</header>
+                <div class="campo">
+                    <label for="nombre">Nombre completo</label>
+                    <input id="nombre" name="nombre" type="text" required maxlength="100"
+                        placeholder="Tu nombre gamer" />
+                </div>
+                <div class="campo">
+                    <label for="correo">Correo electrónico</label>
+                    <input id="correo" name="correo" type="email" required placeholder="tucorreo@dominio.com" />
+                </div>
+                <div class="campo">
+                    <label for="contenido">Mensaje</label>
+                    <textarea id="contenido" name="contenido" rows="4" required
+                        placeholder="Escribe tu mensaje"></textarea>
+                </div>
+                <div class="acciones">
+                    <button id="btnEnviar" type="submit" class="btn primario">Enviar mensaje</button>
+                </div>
+            </form>
+            <div class="soporte-extra">
+                <p>¿Prefieres atención directa? <a href="https://wa.me/56912345678" target="_blank"
+                        class="whatsapp-link">Chatea con nuestro soporte técnico por WhatsApp</a></p>
+            </div>
+        </section>
     </main>
     <footer class="pie">
         <p>© 2025 Level-Up Gamer — Chile</p>
@@ -91,12 +107,12 @@
 
     <div class="panel-cuenta__contenido">
       <div class="panel-cuenta__avatar">
-        <img src="img/imgPerfil.png" alt="Foto de perfil">
+        <img src="../img/imgPerfil.png" alt="Foto de perfil">
       </div>
 
       <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
       <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
-      <a class="btn secundario" href="perfil.html">Editar Perfil</a>
+      <a class="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
 
       <div class="panel-cuenta__bloque">
         <label><strong>Código de referido</strong></label>
@@ -124,4 +140,6 @@
 <div id="cortinaCuenta" class="cortina" hidden></div>
 
 </body>
+
+
 </html>
