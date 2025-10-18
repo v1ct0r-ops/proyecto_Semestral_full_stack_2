@@ -184,7 +184,7 @@ const PaginaPedidos = ({ onNavigate, onViewOrder }) => {
                     <div className="contenido">
                       <h4>{pedido.id}</h4>
                       <p className="info">
-                        {fecha} · {pedido.comprador.nombres} {pedido.comprador.apellidos} ({pedido.comprador.correo})
+                        {fecha} · {pedido.comprador.nombres} {pedido.comprador.apellidos} ({pedido.comprador.correo })
                       </p>
                       <p>
                         <small>
