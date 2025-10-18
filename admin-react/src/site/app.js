@@ -1,21 +1,29 @@
 
+import { productosBase, regiones, categorias } from "./datos.js";
+import {
+  obtener, guardar, usuarioActual,
+  obtenerPedidos, guardarPedidos
+} from "../utils/storage.js";
+
+// /* =============== UTILIDADES =============== */
+// function obtener(key, defecto){
+//   try { return JSON.parse(localStorage.getItem(key)) ?? defecto; } catch { return defecto; }
+// }
+// function guardar(key, valor){
+//   localStorage.setItem(key, JSON.stringify(valor));
+// }
+// function obtenerPedidos(){ 
+//   return obtener("pedidos", []); }
+// function guardarPedidos(peds){ 
+//   guardar("pedidos", peds); }
+// function esAdmin(){ 
+//   const u=usuarioActual(); return !!(u && u.tipoUsuario==="admin"); }
+// function esVendedor(){ 
+//   const u=usuarioActual(); return !!(u && u.tipoUsuario==="vendedor"); }
 
 
-/* =============== UTILIDADES =============== */
-function obtener(key, defecto){
-  try { return JSON.parse(localStorage.getItem(key)) ?? defecto; } catch { return defecto; }
-}
-function guardar(key, valor){
-  localStorage.setItem(key, JSON.stringify(valor));
-}
-function obtenerPedidos(){ 
-  return obtener("pedidos", []); }
-function guardarPedidos(peds){ 
-  guardar("pedidos", peds); }
-function esAdmin(){ 
-  const u=usuarioActual(); return !!(u && u.tipoUsuario==="admin"); }
-function esVendedor(){ 
-  const u=usuarioActual(); return !!(u && u.tipoUsuario==="vendedor"); }
+// import { productosBase, regiones, categorias } from "./datos.js";
+
 
 /* =============== Primera carga =============== */
 if (!localStorage.getItem("productos") && Array.isArray(productosBase)) {
@@ -24,6 +32,54 @@ if (!localStorage.getItem("productos") && Array.isArray(productosBase)) {
 if (!localStorage.getItem("usuarios")) guardar("usuarios", []);
 if (!localStorage.getItem("carrito"))  guardar("carrito", []);
 if (!localStorage.getItem("resenas"))   guardar("resenas", {});
+
+/* ======== SANEADOR DE STORAGE ======== */
+function esObjPlano(x){ return x && typeof x === "object" && !Array.isArray(x); }
+
+function sanearLocalStorage(){
+  // Productos: debe ser array
+  let prods = obtener("productos", []);
+  if (!Array.isArray(prods)) {
+    console.warn("[SANEAR] 'productos' no era Array. Lo reestablezco.");
+    prods = Array.isArray(productosBase) ? productosBase : [];
+    guardar("productos", prods);
+  }
+
+  // Carrito: debe ser array
+  let carr = obtener("carrito", []);
+  if (!Array.isArray(carr)) {
+    console.warn("[SANEAR] 'carrito' no era Array. Lo reestablezco a [].");
+    carr = [];
+    guardar("carrito", carr);
+  }
+
+  // Usuarios: debe ser array
+  let us = obtener("usuarios", []);
+  if (!Array.isArray(us)) {
+    console.warn("[SANEAR] 'usuarios' no era Array. Lo reestablezco a [].");
+    us = [];
+    guardar("usuarios", us);
+  }
+
+  // Reseñas: debe ser objeto plano
+  let rs = obtener("resenas", {});
+  if (!esObjPlano(rs)) {
+    console.warn("[SANEAR] 'resenas' no era objeto. Lo reestablezco a {}.");
+    rs = {};
+    guardar("resenas", rs);
+  }
+
+  // Pedidos: debe ser array
+  let peds = obtener("pedidos", []);
+  if (!Array.isArray(peds)) {
+    console.warn("[SANEAR] 'pedidos' no era Array. Lo reestablezco a [].");
+    peds = [];
+    guardar("pedidos", peds);
+  }
+}
+
+sanearLocalStorage();
+
 
 /* LOGIN Y REGISTRO */
 
@@ -187,12 +243,12 @@ function inicializarLogin(){
 
 
 /* =============== SESIÓN / NAV =============== */
-function usuarioActual(){
-  const sesion = obtener("sesion", null);
-  if(!sesion) return null;
-  const usuarios = obtener("usuarios", []);
-  return usuarios.find(u => u.correo?.toLowerCase() === sesion.correo?.toLowerCase()) || null;
-}
+// function usuarioActual(){
+//   const sesion = obtener("sesion", null);
+//   if(!sesion) return null;
+//   const usuarios = obtener("usuarios", []);
+//   return usuarios.find(u => u.correo?.toLowerCase() === sesion.correo?.toLowerCase()) || null;
+// }
 function actualizarNavegacion(){
   const u = usuarioActual();
   const linkRegistro  = document.getElementById("linkRegistro");
@@ -302,9 +358,9 @@ function inicializarPerfil(){
   if (iFecha) iFecha.value = u.fechaNacimiento || "";
   if (iDir)   iDir.value   = u.direccion || "";
 
-  if (iReg && Array.isArray(window.regiones)) {
+  if (iReg && Array.isArray(regiones)) {
     // set región y disparar comunas
-    const regionUsuario = u.region || (window.regiones[0]?.nombre || "");
+    const regionUsuario = u.region || (regiones[0]?.nombre || "");
     iReg.value = regionUsuario;
     iReg.dispatchEvent(new Event("change"));
   }
@@ -1038,23 +1094,23 @@ function cargarDetalle(){
 
 // ========= Admin / Listados =========
 
-function popularCategorias(){
-  const sel      = document.getElementById("filtroCategoria");
-  const selAdmin = document.getElementById("categoriaProducto");
+// function popularCategorias(){
+//   const sel      = document.getElementById("filtroCategoria");
+//   const selAdmin = document.getElementById("categoriaProducto");
 
-  // Preferimos la lista base de datos.js; si no existe, derivamos de los productos guardados
-  const baseCats  = Array.isArray(window.categorias) ? window.categorias : [];
-  const derivadas = Array.from(new Set(obtener("productos", []).map(p=>p.categoria).filter(Boolean)));
-  const cats      = (baseCats.length ? baseCats : derivadas).sort();
+//   // Preferimos la lista base de datos.js; si no existe, derivamos de los productos guardados
+//   const baseCats  = Array.isArray(categorias) ? categorias : [];
+//   const derivadas = Array.from(new Set(obtener("productos", []).map(p=>p.categoria).filter(Boolean)));
+//   const cats      = (baseCats.length ? baseCats : derivadas).sort();
 
-  if (sel){
-    sel.innerHTML = '<option value="">Todas las categorías</option>' +
-                    cats.map(c=>`<option>${c}</option>`).join("");
-  }
-  if (selAdmin){
-    selAdmin.innerHTML = cats.map(c=>`<option>${c}</option>`).join("");
-  }
-}
+//   if (sel){
+//     sel.innerHTML = '<option value="">Todas las categorías</option>' +
+//                     cats.map(c=>`<option>${c}</option>`).join("");
+//   }
+//   if (selAdmin){
+//     selAdmin.innerHTML = cats.map(c=>`<option>${c}</option>`).join("");
+//   }
+// }
 
 
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -1252,7 +1308,7 @@ function inicializarEditarProducto(){
   // categorías
   // reutiliza tu popularCategorias pero con select específico:
   (function popularCatsEditar(){
-    const baseCats  = Array.isArray(window.categorias) ? window.categorias : [];
+    const baseCats  = Array.isArray(categorias) ? categorias : [];
     const derivadas = Array.from(new Set(obtener("productos", []).map(p=>p.categoria).filter(Boolean)));
     const cats      = (baseCats.length ? baseCats : derivadas).sort();
     iCat.innerHTML  = cats.map(c=>`<option>${c}</option>`).join("");

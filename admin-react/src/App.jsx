@@ -1,24 +1,26 @@
-import { useEffect } from 'react'
-import Dashboard from './components/Dashboard/Dashboard'
-import ProtectedRoute from './components/ProtectedRoute'
-import { setupCrossDomainSync } from './services/crossDomainStorage'
-import './App.css'
-// import './admin-styles.css' // Descomenta cuando copies el CSS
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import AdminPanel from "./components/Dashboard/AdminPanel.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
-function App() {
-  useEffect(() => {
-    // Configurar sincronización cross-domain
-    setupCrossDomainSync()
-    console.log('🔄 Sincronización cross-domain activada')
-  }, [])
-
-  return (
-    <div className="App" style={{ fontFamily: 'Roboto, sans-serif' }}>
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    </div>
-  )
+function NotFound() {
+  return <div style={{padding:24}}><h1>404</h1><p>Ruta no encontrada.</p></div>;
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
