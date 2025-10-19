@@ -476,7 +476,7 @@ input:focus,select:focus,textarea:focus{
 }
 
 .exito{
-  color:#42f59b
+  color:#000000
 }
 
 .info{
@@ -631,16 +631,30 @@ input:focus,select:focus,textarea:focus{
   margin-top:12px
 }
 
-.kpi{
+.kpi {
   background:#0c101a;
   border:1px solid var(--borde);
   border-radius:12px;
   padding:16px;
-  text-align:center;
-  font-size:1.6rem
+  font-size:1.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
+.info.dashboard {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
 
+.panel-solicitud{
+  margin: 20px 17px 0px 17px;
+}
+
+.tarjeta{
+  margin-bottom: 17px;
+}
 
 /* CARRITO */
 
