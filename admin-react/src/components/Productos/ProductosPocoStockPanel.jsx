@@ -1,44 +1,12 @@
-// src/components/productos/ProductosPanel.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { obtener, guardar, usuarioActual } from "../../utils/storage";
+// src/components/productos/ProductosPocoStockPanel.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { obtener, usuarioActual } from "../../utils/storage";
 
-// === Helpers ===
+// Helper CLP (o usa el tuyo global)
 const CLP = (n) =>
   typeof n === "number"
     ? n.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
     : "—";
-
-// === Hook de sesión/datos ===
-function useSessionData() {
-  const [user, setUser] = useState(null);
-  const [productos, setProductos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [pedidos, setPedidos] = useState([]);
-
-  useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
-      alert("Acceso restringido.");
-      window.location.href = "/index.html";
-      return;
-    }
-    setUser(u);
-    setProductos(Array.isArray(obtener("productos", [])) ? obtener("productos", []) : []);
-    setUsuarios(Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : []);
-    setPedidos(Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []);
-  }, []);
-
-  const kpis = useMemo(
-    () => ({
-      productos: productos.length,
-      usuarios: usuarios.length,
-      pendientes: pedidos.filter((p) => p.estado === "pendiente").length,
-    }),
-    [productos, usuarios, pedidos]
-  );
-
-  return { user, productos, kpis };
-}
 
 // === Header ===
 function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
@@ -221,19 +189,47 @@ function AccountPanel({ user, open, onClose }) {
   );
 }
 
-// === Página: Productos ===
-export default function ProductosPanel() {
-  const { user, productos } = useSessionData();
+// ===== Página: Productos con poco stock =====
+export default function ProductosPocoStockPanel() {
+  // Hooks SIEMPRE al tope
+  const [user, setUser] = useState(null);
+  const [productos, setProductos] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const deleteDialogRef = useRef(null);
-  const [deleteCode, setDeleteCode] = useState("");
 
+  // Carga de datos
+  useEffect(() => {
+    const u = usuarioActual();
+    if (!u) {
+      alert("Acceso restringido.");
+      window.location.href = "/index.html";
+      return;
+    }
+    setUser(u);
+    const prods = Array.isArray(obtener("productos", [])) ? obtener("productos", []) : [];
+    setProductos(prods);
+  }, []);
+
+  // Derivado: lista de críticos ordenada por stock asc
+  const listaCriticos = useMemo(() => {
+    const arr = Array.isArray(productos) ? productos : [];
+    const crit = arr.filter(
+      (p) =>
+        typeof p.stock === "number" &&
+        typeof p.stockCritico === "number" &&
+        p.stock <= p.stockCritico
+    );
+    crit.sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
+    return crit;
+  }, [productos]);
+
+  // Efecto visual del menú
   useEffect(() => {
     document.body.classList.toggle("menu-abierto", menuOpen);
     return () => document.body.classList.remove("menu-abierto");
   }, [menuOpen]);
 
+  // Guard
   if (!user) return null;
   const isAdmin = user.tipoUsuario === "admin";
 
@@ -253,10 +249,10 @@ export default function ProductosPanel() {
       />
 
       <section className="admin">
-        {/* Menú lateral (desktop) */}
+        {/* Lateral */}
         <aside className="menu-admin">
           <a href="/admin">Inicio</a>
-          <a href="/admin/productos" className="activo">Productos</a>
+          <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
@@ -264,135 +260,37 @@ export default function ProductosPanel() {
 
         {/* Panel principal */}
         <div className="panel">
-          <h1>Productos</h1>
+          <h1>Productos con poco stock</h1>
 
-          {/* Acciones principales */}
-          <div className="acciones" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-            {isAdmin && (
-              <>
-                <a className="btn primario solo-admin" href="/admin/producto-nuevo">
-                  Nuevo Producto
-                </a>
-                <a className="btn secundario solo-admin" href="/admin/productos-poco-stock">
-                  Poco stock
-                </a>
-                <a className="btn secundario solo-admin" href="/admin/reportes-productos">
-                  Reportes
-                </a>
-              </>
-            )}
-          </div>
-
-          <table className="tabla">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                {isAdmin && <th id="thAcciones">Acciones</th>}
-              </tr>
-            </thead>
-            <tbody id="tablaProductos">
-              {Array.isArray(productos) && productos.length > 0 ? (
-                productos.map((p) => (
+          {listaCriticos.length === 0 ? (
+            <p className="info">No hay productos en nivel crítico.</p>
+          ) : (
+            <table className="tabla">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Crítico</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaCriticos.map((p) => (
                   <tr key={p.codigo}>
                     <td>{p.codigo}</td>
                     <td>{p.nombre}</td>
                     <td>{p.categoria || "—"}</td>
                     <td>{CLP(p.precio)}</td>
-                    <td
-                      className={
-                        typeof p.stock === "number" &&
-                        typeof p.stockCritico === "number" &&
-                        p.stock <= p.stockCritico
-                          ? "stock-critico"
-                          : ""
-                      }
-                    >
-                      {typeof p.stock === "number" ? p.stock : "—"}
-                    </td>
-                    {isAdmin && (
-                      <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <a
-                          className="btn secundario"
-                          href={`/admin/editarProducto/${encodeURIComponent(p.codigo)}`}
-                        >
-                          Editar
-                        </a>
-
-                        {/* Botón Eliminar */}
-                        <button
-                          className="btn peligro"
-                          type="button"
-                          onClick={() => {
-                            setDeleteCode(p.codigo);
-                            deleteDialogRef.current?.showModal();
-                          }}
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    )}
+                    <td className="stock-critico">{typeof p.stock === "number" ? p.stock : "—"}</td>
+                    <td>{typeof p.stockCritico === "number" ? p.stockCritico : "—"}</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={isAdmin ? 6 : 5}>
-                    <p className="info" style={{ margin: 0 }}>
-                      No hay productos cargados.
-                    </p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          {/* Dialog de confirmación para eliminar */}
-          <dialog ref={deleteDialogRef} className="modal">
-            <form method="dialog" className="formulario" style={{ minWidth: 320, maxWidth: 480 }}>
-              <h3>Eliminar producto</h3>
-              <p>
-                ¿Estás seguro de eliminar el producto <strong>{deleteCode}</strong>? Esta acción no se puede deshacer.
-              </p>
-              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-                <button
-                  className="btn peligro"
-                  value="ok"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!deleteCode) return;
-
-                    const lista = Array.isArray(obtener("productos", [])) ? obtener("productos", []) : [];
-                    const idx = lista.findIndex((x) => x.codigo === deleteCode);
-                    if (idx >= 0) {
-                      lista.splice(idx, 1);
-                      guardar("productos", lista);
-                    }
-
-                    deleteDialogRef.current?.close();
-                    // Refrescamos la vista para que desaparezca el producto
-                    window.location.reload();
-                  }}
-                >
-                  Estoy seguro
-                </button>
-                <button
-                  className="btn secundario"
-                  value="cancel"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    deleteDialogRef.current?.close();
-                  }}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </dialog>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
-
       </section>
 
       <footer className="pie">

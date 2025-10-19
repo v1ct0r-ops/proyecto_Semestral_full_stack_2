@@ -776,7 +776,10 @@ function renderDestacados(){
         <p class="precio">${formatoPrecio(p.precio)}</p>
         <div class="acciones">
           <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
-          <button class="btn primario" data-agregar="${p.codigo}">Añadir</button>
+          <button class="btn primario" data-agregar="${p.codigo}"
+            ${Number(p.stock) > 0 ? "" : "disabled aria-disabled='true' title='Sin stock'"}>${
+              Number(p.stock) > 0 ? "Añadir" : "Sin stock"
+            }</button>
         </div>
       </div>
     </article>
@@ -794,6 +797,31 @@ function renderDestacados(){
 }
 
 
+
+function mostrarDialogoStock(mensaje, titulo = "Aviso") {
+  let dlg = document.getElementById("dlgAvisoStock");
+  // Si la página no lo tiene (por si acaso), lo creamos dinámicamente
+  if (!dlg) {
+    dlg = document.createElement("dialog");
+    dlg.id = "dlgAvisoStock";
+    dlg.className = "modal";
+    dlg.innerHTML = `
+      <form method="dialog" class="formulario" style="min-width:320px;max-width:480px">
+        <h3 id="dlgAvisoStockTitulo">Aviso</h3>
+        <p id="dlgAvisoStockMsg">Mensaje</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button class="btn" value="ok" autofocus>Aceptar</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dlg);
+  }
+  const h = dlg.querySelector("#dlgAvisoStockTitulo");
+  const p = dlg.querySelector("#dlgAvisoStockMsg");
+  if (h) h.textContent = titulo;
+  if (p) p.textContent = mensaje;
+  dlg.showModal();
+}
+
 /* =============== CARRITO =============== */
 function obtenerCarrito(){ return obtener("carrito", []); }
 function guardarCarrito(c){ guardar("carrito", c); actualizarContadorCarrito(); renderCarrito(); }
@@ -804,7 +832,7 @@ function agregarAlCarrito(codigo, cantidad = 1){
 
   const stock = Number(prod.stock) || 0;
   if (stock <= 0){
-    alert("Sin stock disponible.");
+    mostrarDialogoStock("Sin stock disponible", "Stock");
     return;
   }
 
@@ -814,7 +842,7 @@ function agregarAlCarrito(codigo, cantidad = 1){
 
   const restante = stock - enCarrito;
   if (restante <= 0){
-    alert("Ya alcanzaste el stock disponible para este producto.");
+    mostrarDialogoStock("Alcanzaste el máximo según stock disponible para este producto.", "Stock");
     return;
   }
 
@@ -826,7 +854,7 @@ function agregarAlCarrito(codigo, cantidad = 1){
   guardarCarrito(carrito);
 
   if ((Number(cantidad)||1) > aAgregar){
-    alert(`Solo quedaban ${restante} unidad(es) disponibles. Se ajustó la cantidad en el carrito.`);
+    mostrarDialogoStock(`Solo quedaban ${restante} unidad(es) disponibles. Se ajustó la cantidad en el carrito.`, "Stock");
   }
 }
 
@@ -847,7 +875,7 @@ function cambiarCantidad(codigo, nuevaCant){
     let cant = Math.max(1, parseInt(nuevaCant||"1",10));
     if (cant > stock){
       cant = stock;
-      alert(`La cantidad supera el stock disponible (${stock}). Se ajustó automáticamente.`);
+      mostrarDialogoStock(`La cantidad supera el stock disponible (${stock}). Se ajustó automáticamente.`, "Stock");
     }
     c[i].cantidad = cant;
   }
@@ -1155,20 +1183,22 @@ function renderProductos(){
   }
 
   grid.innerHTML = prods.map(p => `
-  <article class="tarjeta tarjeta-producto">
-    <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='img/placeholder.jpg'">
-    <div class="contenido">
-      <h3>${p.nombre}</h3>
-      <small>${p.categoria}</small>
-      <p class="precio">${formatoPrecio(precioConDescuento(p.precio))}</p>
-      <div class="acciones">
-        <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
-        <button class="btn primario" data-add="${p.codigo}" type="button"
-        ${Number(p.stock) > 0 ? "" : "disabled title='Sin stock'"}>Añadir</button>
+    <article class="tarjeta tarjeta-producto">
+      <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='img/placeholder.jpg'">
+      <div class="contenido">
+        <h3>${p.nombre}</h3>
+        <small>${p.categoria}</small>
+        <p class="precio">${formatoPrecio(precioConDescuento(p.precio))}</p>
+        <div class="acciones">
+          <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
+          <button class="btn primario" data-add="${p.codigo}" type="button"
+            ${Number(p.stock) > 0 ? "" : "disabled aria-disabled='true' title='Sin stock'"}>${
+              Number(p.stock) > 0 ? "Añadir" : "Sin stock"
+            }</button>
+        </div>
       </div>
-    </div>
-  </article>
-`).join("");
+    </article>
+  `).join("");
 }
 
 /* =============== DETALLE DE PRODUCTO + RESEÑAS =============== */
@@ -1321,6 +1351,7 @@ function cargarDetalle(){
   if ((Number(prod.stock)||0) <= 0){
     btn.disabled = true;
     btn.title = "Sin stock";
+    btn.textContent = "Sin stock";
   }
   btn.addEventListener("click", ()=>{
     const cant = parseInt(document.getElementById("cantidadDetalle")?.value||"1",10);

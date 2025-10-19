@@ -357,6 +357,15 @@ body.menu-abierto{
   filter:brightness(.95);
 }
 
+.btn.primario[disabled],
+.btn.primario[aria-disabled="true"] {
+  background: transparent !important;
+  color: red !important;
+  border: none !important;
+  cursor: default;
+  pointer-events: none;
+}
+
 .btn.secundario{
   background:transparent;
   color:var(--azul);
