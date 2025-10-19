@@ -245,11 +245,12 @@ export default function AdminPanelReact() {
       <section className="admin">
         {/* Menú lateral (desktop) */}
         <aside className="menu-admin">
-          <a href="/admin">Inicio</a>
+          <a href="/admin" className="activo">Inicio</a>
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitud</a>
+          <a href="/admin/boleta">Boletas</a>
         </aside>
 
         {/* Panel principal */}

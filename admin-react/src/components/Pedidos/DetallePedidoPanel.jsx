@@ -316,7 +316,47 @@ export default function DetallePedidoPanel() {
     );
     setPedidos(nuevos);
     localStorage.setItem("pedidos", JSON.stringify(nuevos));
-    alert("Pedido marcado como despachado.");
+    
+    // NUEVA FUNCIONALIDAD: Generar boleta automáticamente
+    generarBoletaAutomatica(pedido);
+    alert("Pedido marcado como despachado y boleta generada.");
+  };
+
+  // NUEVA FUNCIONALIDAD: Función para generar boletas automáticamente
+  const generarBoletaAutomatica = (pedidoData) => {
+    if (!pedidoData) return;
+
+    // Verificar si ya existe una boleta para este pedido
+    const boletas = JSON.parse(localStorage.getItem("boletas") || "[]");
+    const boletaExistente = boletas.find(b => b.pedidoId === pedidoData.id);
+    
+    if (boletaExistente) {
+      console.log("Ya existe una boleta para este pedido:", pedidoData.id);
+      return;
+    }
+
+    // Obtener datos del cliente
+    const comprador = pedidoData.comprador || pedidoData.usuario || pedidoData.cliente || {};
+    const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim();
+    
+    // Generar número de boleta único
+    const timestamp = Date.now();
+    const numeroBoleta = `BOL-${String(timestamp).slice(-6)}`;
+    
+    const nuevaBoleta = {
+      numero: numeroBoleta,
+      fecha: new Date().toISOString().split('T')[0],
+      cliente: nombreCompleto || "Cliente",
+      pedidoId: pedidoData.id,
+      total: CLP(pedidoData.total || 0),
+      totalNumerico: pedidoData.total || 0,
+      fechaCreacion: new Date().toISOString()
+    };
+
+    // Agregar la nueva boleta
+    const nuevasBoletas = [...boletas, nuevaBoleta];
+    localStorage.setItem("boletas", JSON.stringify(nuevasBoletas));
+    console.log(`Boleta ${numeroBoleta} generada para pedido ${pedidoData.id}`);
   };
 
   const titulo =
@@ -347,6 +387,7 @@ export default function DetallePedidoPanel() {
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos" className="activo">Pedidos</a>
           <a href="/admin/solicitud">Solicitud</a>
+          <a href="/admin/boleta">Boletas</a>
         </aside>
 
         <div className="panel">
@@ -401,7 +442,7 @@ export default function DetallePedidoPanel() {
                 </article>
               </div>
 
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button
                   id="btnMarcarDespachado"
                   className={
@@ -418,28 +459,14 @@ export default function DetallePedidoPanel() {
                     : "Pedido cancelado"}
                 </button>
 
-                {/* Nuevo botón Generar Boleta */}
-                {(pedido.estado === "pendiente" || pedido.estado === "despachado") && (
-                  <button 
-                    style={{ paddingLeft: 16, marginLeft: 8 }}
-                    id="btnGenerarBoleta"
-                    className="btn secundario"
-                    onClick={() => {
-                      const dlg = document.getElementById("dlgBoleta");
-                      const hid = document.getElementById("boletaPedidoId");
-                      const resumen = document.getElementById("boletaResumen");
-                      
-                      if (dlg && hid && resumen) {
-                        hid.value = pedido.id;
-                        resumen.innerHTML = `<p>Boleta del pedido ${pedido.id}</p>`;
-                        dlg.showModal();
-                      }
-                    }}
-                  >
-                    Generar boleta
-                  </button>
-                )}
-
+                {/* NUEVO BOTÓN: Enlace para ir a ver todas las boletas */}
+                <button 
+                  className="btn secundario"
+                  onClick={() => navigate("/admin/boleta")}
+                  style={{ cursor: "pointer" }}
+                >
+                  Ver Boletas
+                </button>
               </div>
             </>
           )}
