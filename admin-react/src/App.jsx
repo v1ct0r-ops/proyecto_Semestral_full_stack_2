@@ -3,6 +3,8 @@ import AdminPanel from "./components/Dashboard/AdminPanel.jsx";
 import ProductosPanel from "./components/Productos/ProductosPanel.jsx";
 import NuevoProductoPanel from "./components/Productos/NuevoProductoPanel.jsx";
 import EditarProductoPanel from "./components/Productos/EditarProductoPanel.jsx";
+import ProductosPocoStockPanel from "./components/Productos/ProductosPocoStockPanel.jsx";
+import ReportesProductosPanel from "./components/Productos/ReportesProductosPanel.jsx";
 import PedidosPanel from "./components/Pedidos/PedidosPanel.jsx";
 import DetallePedidoPanel from "./components/Pedidos/DetallePedidoPanel.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -64,6 +66,26 @@ export default function App() {
               <EditarProductoPanel />
             </ProtectedRoute>
           } />
+
+        {/* productos poco stock */}
+        <Route
+          path="/admin/productos-poco-stock"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <ProductosPocoStockPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* reportes productos */}
+        <Route
+          path="/admin/reportes-productos"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <ReportesProductosPanel />
+            </ProtectedRoute>
+          }
+        />
 
         {/* pedidos */}
         <Route
