@@ -5,6 +5,10 @@ import NuevoProductoPanel from "./components/Productos/NuevoProductoPanel.jsx";
 import EditarProductoPanel from "./components/Productos/EditarProductoPanel.jsx";
 import ProductosPocoStockPanel from "./components/Productos/ProductosPocoStockPanel.jsx";
 import ReportesProductosPanel from "./components/Productos/ReportesProductosPanel.jsx";
+import UsuariosPanel from "./components/Usuario/UsuariosPanel.jsx";
+import NuevoUsuarioPanel from "./components/Usuario/NuevoUsuarioPanel.jsx";
+import EditarUsuarioPanel from "./components/Usuario/EditarUsuarioPanel.jsx";
+import HistorialUsuarioPanel from "./components/Usuario/HistorialUsuarioPanel.jsx";
 import PedidosPanel from "./components/Pedidos/PedidosPanel.jsx";
 import DetallePedidoPanel from "./components/Pedidos/DetallePedidoPanel.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -80,6 +84,46 @@ export default function App() {
           element={
             <ProtectedRoute roles={["admin", "vendedor"]}>
               <ReportesProductosPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* usuarios */}
+        <Route
+          path="/admin/usuarios"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <UsuariosPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* nuevo usuario */}
+        <Route
+          path="/admin/usuario-nuevo"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <NuevoUsuarioPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* editar usuario */}
+        <Route
+          path="/admin/usuario/editar/:run" 
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <EditarUsuarioPanel />
+            </ProtectedRoute>
+          }
+        />  
+        
+        {/* historial usuario */}
+        <Route
+          path="/admin/usuario/historial/:run"  
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <HistorialUsuarioPanel />
             </ProtectedRoute>
           }
         />
