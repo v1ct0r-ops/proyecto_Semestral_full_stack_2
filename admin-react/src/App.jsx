@@ -7,6 +7,7 @@ import PedidosPanel from "./components/Pedidos/PedidosPanel.jsx";
 import DetallePedidoPanel from "./components/Pedidos/DetallePedidoPanel.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Usuarios from "./components/usuarios/Usuarios.JSX";
+import Boleta from "./components/Boleta/Boleta.jsx";
 
 function NotFound() {
   return (
@@ -87,6 +88,10 @@ export default function App() {
           <Route
           path="/admin/usuarios" element={<Usuarios />} />
           
+
+          {/* Boleta */}
+          <Route
+          path="/admin/boleta" element={<Boleta />} />
 
         {/* fallback */}
         <Route path="*" element={<NotFound />} />
