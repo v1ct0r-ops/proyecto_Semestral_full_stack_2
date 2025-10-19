@@ -6,6 +6,7 @@ import EditarProductoPanel from "./components/Productos/EditarProductoPanel.jsx"
 import PedidosPanel from "./components/Pedidos/PedidosPanel.jsx";
 import DetallePedidoPanel from "./components/Pedidos/DetallePedidoPanel.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Usuarios from "./components/usuarios/Usuarios.JSX";
 
 function NotFound() {
   return (
@@ -81,6 +82,11 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* usuarios  solo probando no considerar*/}   
+          <Route
+          path="/admin/usuarios" element={<Usuarios />} />
+          
 
         {/* fallback */}
         <Route path="*" element={<NotFound />} />
