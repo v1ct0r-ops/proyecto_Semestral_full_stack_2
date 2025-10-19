@@ -77,6 +77,16 @@
     <p id="textoDescuento" class="oculto">Descuento DUOC (20%): <span id="montoDescuento"></span></p>
     <p>Total: <strong id="totalCarrito">$0</strong></p>
     <button id="btnPagar" class="btn primario">Proceder al pago</button>
+    <!-- Modal para preguntar si desea boleta -->
+    <dialog id="dlgBoleta" class="modal">
+      <form method="dialog" class="formulario" style="min-width:320px;max-width:480px">
+        <h3>¿Desea boleta para su compra?</h3>
+        <div style="margin:16px 0;display:flex;gap:16px;justify-content:center;">
+          <button id="btnBoletaSi" class="btn primario" value="si" autofocus>Sí, quiero boleta</button>
+          <button id="btnBoletaNo" class="btn secundario" value="no">No, solo pagar</button>
+        </div>
+      </form>
+    </dialog>
   </div>
 </section>
 

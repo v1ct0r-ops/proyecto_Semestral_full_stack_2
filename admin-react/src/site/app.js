@@ -1871,8 +1871,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Botón pagar
   const btnPagar = document.getElementById("btnPagar");
+  const dlgBoleta = document.getElementById("dlgBoleta");
   if (btnPagar && !btnPagar.dataset.bind){
     btnPagar.addEventListener("click", ()=>{
+      if (!dlgBoleta) return;
+      dlgBoleta.showModal();
+    });
+    btnPagar.dataset.bind = "1";
+  }
+
+  // Manejar respuesta del modal de boleta
+  if (dlgBoleta && !dlgBoleta.dataset.bind) {
+    dlgBoleta.addEventListener("close", ()=>{
+      const respuesta = dlgBoleta.returnValue;
+      // Si el usuario cierra el modal sin elegir, no hace nada
+      if (respuesta !== "si" && respuesta !== "no") return;
+
       const u = usuarioActual();
       if(!u){ alert("Debés iniciar sesión para pagar."); window.location.href = "login.html"; return; }
 
@@ -1892,10 +1906,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // === crear pedido global para panel de Pedidos ===
       const pedidoId = "PED-" + Date.now();
+      const solicitarBoleta = respuesta === "si";
       const pedido = {
         id: pedidoId,
         fecha: new Date().toISOString(),
-        estado: "pendiente", // "pendiente" | "despachado"
+        estado: "pendiente",
         comprador: {
           run: u.run, nombres: u.nombres, apellidos: u.apellidos, correo: u.correo
         },
@@ -1903,7 +1918,8 @@ document.addEventListener("DOMContentLoaded", () => {
           region: u.region || "", comuna: u.comuna || "", direccion: u.direccion || ""
         },
         items: itemsCompra.map(it => ({ codigo: it.codigo, cantidad: it.cantidad, precio: it.precio })),
-        total: total // sin descuentos, si querés guarda también total con descuento
+        total: total,
+        solicitarBoleta: solicitarBoleta
       };
       const todos = obtenerPedidos();
       todos.push(pedido);
@@ -1918,14 +1934,38 @@ document.addEventListener("DOMContentLoaded", () => {
       // registrar compra
       registrarCompraAlUsuario(u, itemsCompra);
       descontarStock(itemsCompra);
-      
 
-      alert(`Pago simulado. ¡Gracias por tu compra!\nGanaste ${ganados} puntos (Nivel: ${nivel}).`);
+      if (solicitarBoleta) {
+        // Generar PDF de boleta y descargar automáticamente
+        import('jspdf').then(jsPDFModule => {
+          const jsPDF = jsPDFModule.jsPDF;
+          const doc = new jsPDF();
+          doc.setFontSize(16);
+          doc.text('Boleta de compra', 20, 20);
+          doc.setFontSize(12);
+          doc.text(`Cliente: ${u.nombres} ${u.apellidos}`, 20, 35);
+          doc.text(`Correo: ${u.correo}`, 20, 42);
+          doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 49);
+          doc.text(`Pedido: ${pedidoId}`, 20, 56);
+          let y = 65;
+          doc.text('Productos:', 20, y);
+          y += 7;
+          itemsCompra.forEach(it => {
+            doc.text(`- ${it.cantidad} x ${it.codigo} ($${it.precio})`, 25, y);
+            y += 7;
+          });
+          doc.text(`Total: $${total}`, 20, y+5);
+          doc.save(`boleta_${pedidoId}.pdf`);
+          alert('¡Gracias por tu compra! Tu boleta se ha descargado automáticamente.\nGanaste ' + ganados + ' puntos (Nivel: ' + nivel + ').');
+        });
+      } else {
+        alert(`Pago simulado. ¡Gracias por tu compra!\nGanaste ${ganados} puntos (Nivel: ${nivel}).`);
+      }
       guardar("carrito", []);
       renderCarrito();
       actualizarNavegacion();
     });
-    btnPagar.dataset.bind = "1";
+    dlgBoleta.dataset.bind = "1";
   }
 
   // Mis compras

@@ -3,30 +3,6 @@ import { obtener, usuarioActual } from "../../utils/storage";
 
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
-// Helpers de fechas y conteos mensuales
-function normalizarFechaPedido(p) {
-  // intenta múltiples campos posibles
-  const f = p?.fecha || p?.fechaPedido || p?.creado || p?.createdAt;
-  const d = f ? new Date(f) : null;
-  return isNaN(d?.getTime?.()) ? null : d;
-}
-function esMismoMes(d, base = new Date()) {
-  return d && d.getFullYear() === base.getFullYear() && d.getMonth() === base.getMonth();
-}
-function mesAnterior(base = new Date()) {
-  const d = new Date(base);
-  d.setMonth(d.getMonth() - 1);
-  return d;
-}
-function esMismoMesQue(d, refDate) {
-  return d && d.getFullYear() === refDate.getFullYear() && d.getMonth() === refDate.getMonth();
-}
-function normalizarFechaUsuario(u) {
-  const f = u?.fechaRegistro || u?.fecha || u?.creado || u?.createdAt;
-  const d = f ? new Date(f) : null;
-  return isNaN(d?.getTime?.()) ? null : d;
-}
-
 function useSessionData() {
   const [user, setUser] = useState(null);
   const [productos, setProductos] = useState([]);
@@ -46,49 +22,14 @@ function useSessionData() {
     setPedidos(Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []);
   }, []);
 
-  const kpis = useMemo(() => {
-    // Productos
-    const totalProductos = productos.length;
-    const inventario = productos.reduce((acc, p) => acc + (Number(p?.stock) || 0), 0);
-
-    // Compras: estados exitosos = pendiente o despachado (según tu consigna)
-    const estadosExito = new Set(["pendiente", "despachado"]);
-    const comprasTotales = pedidos.filter((p) => estadosExito.has((p?.estado || "").toLowerCase())).length;
-
-    // Probabilidad de aumento mensual (compras mes actual vs mes anterior)
-    const ahora = new Date();
-    const refMesAnterior = mesAnterior(ahora);
-    const comprasMesActual = pedidos.filter((p) => {
-      const d = normalizarFechaPedido(p);
-      return estadosExito.has((p?.estado || "").toLowerCase()) && esMismoMes(d, ahora);
-    }).length;
-    const comprasMesAnterior = pedidos.filter((p) => {
-      const d = normalizarFechaPedido(p);
-      return estadosExito.has((p?.estado || "").toLowerCase()) && esMismoMesQue(d, refMesAnterior);
-    }).length;
-    const variacion = comprasMesActual - comprasMesAnterior;
-    const probAumento = Math.max(0, Math.round((variacion / Math.max(1, comprasMesAnterior)) * 100));
-
-    // Usuarios
-    const totalUsuarios = usuarios.length;
-    const nuevosUsuariosMes = usuarios.filter((u) => {
-      const d = normalizarFechaUsuario(u);
-      return esMismoMes(d, ahora);
-    }).length;
-
-    // Pedidos pendientes (se mantiene)
-    const pendientes = pedidos.filter((p) => (p?.estado || "").toLowerCase() === "pendiente").length;
-
-    return {
-      productos: totalProductos,
-      inventario,
-      comprasTotales,
-      probAumento,
-      usuarios: totalUsuarios,
-      nuevosUsuariosMes,
-      pendientes,
-    };
-  }, [productos, usuarios, pedidos]);
+  const kpis = useMemo(
+    () => ({
+      productos: productos.length,
+      usuarios: usuarios.length,
+      pendientes: pedidos.filter((p) => p.estado === "pendiente").length,
+    }),
+    [productos, usuarios, pedidos]
+  );
 
   return { user, productos, usuarios, pedidos, kpis };
 }
@@ -304,11 +245,11 @@ export default function AdminPanelReact() {
       <section className="admin">
         {/* Menú lateral (desktop) */}
         <aside className="menu-admin">
-          <a href="/admin" className="activo">Inicio</a>
+          <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
-          <a href="/admin/solicitud">Solicitud</a>
+          <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
         </aside>
 
@@ -317,41 +258,21 @@ export default function AdminPanelReact() {
           <h1 id="tituloPanel">Panel</h1>
           <p id="descPanel" className="info">Accedé a la gestión según tu rol.</p>
 
-        {/* KPIs */}
+          {/* KPIs */}
           <div className="tarjetas admin-kpis" style={{ marginTop: 12 }}>
-            {/* NUEVO: Compras (antes de Productos) */}
-            <div className="kpi" id="kpiComprasBox">
-              <small>Compras</small>
-              <span id="kpiCompras" style={{ marginTop: 10 }}>{kpis.comprasTotales}</span>
-              <div className="info dashboard" style={{ fontSize: 14, marginTop: 4 }}>
-                Probabilidad de aumento: <strong>{kpis.probAumento}%</strong>
-              </div>
-            </div>
-
-            {/* Productos + Inventario */}
-            <div className="kpi" id="kpiProductosBox">
+            <div className="kpi">
+              <span id="kpiProductos">{kpis.productos}</span>
               <small> Productos</small>
-              <span id="kpiProductos" style={{ marginTop: 10 }}>{kpis.productos}</span>
-              <div className="info dashboard" style={{ fontSize: 14, marginTop: 4 }}>
-                Inventario actual: <strong>{kpis.inventario}</strong>
-              </div>
             </div>
-
-            {/* Usuarios + Nuevos del mes (visible solo para admin, como ya tenías) */}
             {isAdmin && (
               <div className="kpi" id="kpiUsuariosBox">
-                <small>Usuarios</small>
-                <span id="kpiUsuarios" style={{ marginTop: 10 }}>{kpis.usuarios}</span>
-                <div className="info dashboard" style={{ fontSize: 14, marginTop: 4 }}>
-                  Nuevos este mes: <strong>{kpis.nuevosUsuariosMes}</strong>
-                </div>
+                <span id="kpiUsuarios">{kpis.usuarios}</span>
+                <small> Usuarios</small>
               </div>
             )}
-
-            {/* Pedidos pendientes (se conserva) */}
             <div className="kpi" id="kpiPedidosBox">
-              <small>Pedidos pendientes</small>
-              <span id="kpiPedidos" style={{ marginTop: 10 }}>{kpis.pendientes}</span>
+              <span id="kpiPedidos">{kpis.pendientes}</span>
+              <small> Pedidos pendientes</small>
             </div>
           </div>
 

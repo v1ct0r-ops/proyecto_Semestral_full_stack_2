@@ -173,6 +173,26 @@ export default function App() {
           }
         />
 
+
+        {/* Detalle boleta */}
+        <Route
+          path="/admin/boleta/:numero"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <DetalleBoleta />
+            </ProtectedRoute>
+          }
+        />
+        {/* Boletas */}
+        <Route
+          path="/admin/boleta"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <Boleta />
+            </ProtectedRoute>
+          }
+        />
+
         {/* fallback */}
         <Route path="*" element={<NotFound />} />
       </Routes>

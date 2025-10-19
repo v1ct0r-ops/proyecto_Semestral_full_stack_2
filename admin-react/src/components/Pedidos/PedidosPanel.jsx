@@ -236,6 +236,36 @@ function AccountPanel({ user, open, onClose }) {
 }
 
 /* ============== Tarjeta Pedido ============== */
+import jsPDF from "jspdf";
+
+function generarPDFBoleta(pedido, usuarios) {
+  const comprador = pedido.comprador || pedido.usuario || pedido.cliente || pedido.user || {};
+  const nombre = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim();
+  const correo = comprador.correo || comprador.email || pedido.correo || "—";
+  const pedidoId = pedido.id || pedido.codigo || pedido.timestamp || "";
+  const fecha = pedido.fecha || pedido.createdAt || pedido.timestamp || pedido.fechaCreacion || new Date().toISOString();
+  const total = pedido.total || pedido.totalCLP || 0;
+  const items = Array.isArray(pedido.items) ? pedido.items : [];
+
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Boleta de compra", 20, 20);
+  doc.setFontSize(12);
+  doc.text(`Cliente: ${nombre}`, 20, 35);
+  doc.text(`Correo: ${correo}`, 20, 42);
+  doc.text(`Fecha: ${new Date(fecha).toLocaleString()}`, 20, 49);
+  doc.text(`Pedido: ${pedidoId}`, 20, 56);
+  let y = 65;
+  doc.text("Productos:", 20, y);
+  y += 7;
+  items.forEach(it => {
+    doc.text(`- ${it.cantidad} x ${it.codigo} ($${it.precio})`, 25, y);
+    y += 7;
+  });
+  doc.text(`Total: $${total}`, 20, y+5);
+  doc.save(`boleta_${pedidoId}.pdf`);
+}
+
 function PedidoCard({ pedido, usuarios, onVerDetalle }) {
   // 👇 AHORA incluimos 'pedido.comprador' como primera opción
   const compradorDirect =
@@ -300,7 +330,7 @@ function PedidoCard({ pedido, usuarios, onVerDetalle }) {
           <strong>Total:</strong> {CLP(total)}
         </p>
 
-        <div className="acciones" style={{ gap: 8 }}>
+        <div className="acciones" style={{ gap: 8, flexWrap: 'wrap' }}>
           <button
             type="button"
             className={estadoBadgeClass(estado)}
@@ -317,6 +347,15 @@ function PedidoCard({ pedido, usuarios, onVerDetalle }) {
             style={{ cursor: "pointer" }}
           >
             Ver detalle
+          </button>
+
+          <button
+            className="btn primario"
+            style={{ cursor: "pointer" }}
+            onClick={() => generarPDFBoleta(pedido, usuarios)}
+            title="Descargar boleta PDF"
+          >
+            Descargar boleta
           </button>
         </div>
       </div>
@@ -368,7 +407,7 @@ export default function PedidosPanel() {
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos" className="activo">Pedidos</a>
-          <a href="/admin/solicitud">Solicitud</a>
+          <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
         </aside>
 
