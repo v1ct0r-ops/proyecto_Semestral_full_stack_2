@@ -474,9 +474,12 @@ function renderMisCompras(){
   if(!cont) return;
 
   const u = usuarioActual();
-  if(!u){ cont.innerHTML = `<p class="info">Iniciá sesión para ver tus compras.</p>`; return; }
+  if(!u){
+    cont.innerHTML = `<p class="info">Iniciá sesión para ver tus compras.</p>`;
+    return;
+  }
 
-  const compras = Array.isArray(u.compras) ? u.compras : [];
+  const compras = Array.isArray(u.compras) ? u.compras.slice() : [];
   if (!compras.length){
     cont.innerHTML = `<p class="info">Aún no tenés compras.</p>`;
     return;
@@ -513,6 +516,11 @@ function renderMisCompras(){
       ? `<button class="btn peligro" data-cancelar="${ped.id}">Cancelar pedido</button>`
       : "";
 
+    // Botón Generar boleta (siempre visible; si querés, podés ocultarlo cuando esté cancelado)
+    const btnBoleta = (estado === "pendiente" || estado === "despachado")
+      ? `<button class="btn secundario" data-boleta="${ped.id}">Generar boleta</button>`
+      : "";
+
     return `<article class="tarjeta">
       <div class="contenido">
         <h4>Pedido ${ped.id} ${badge}</h4>
@@ -520,56 +528,228 @@ function renderMisCompras(){
         ${filas}
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           ${btnCancelar}
+          ${btnBoleta}
         </div>
       </div>
     </article>`;
   }).join("");
 
-  // Delegación: abrir modal
+  // Delegación: abrir modal (Cancelar y Boleta) – un solo listener
   if (!cont.dataset.bind){
     cont.addEventListener("click",(e)=>{
-      const btn = e.target.closest("[data-cancelar]");
-      if (!btn) return;
-      const id = btn.getAttribute("data-cancelar");
-      const dlg = document.getElementById("dlgCancelarPedido");
-      const hid = document.getElementById("cancelarPedidoId");
-      if (!dlg || !hid) return;
-      hid.value = id;
-      dlg.showModal();
+      // --- Cancelar ---
+      const btnCancel = e.target.closest("[data-cancelar]");
+      if (btnCancel){
+        const id = btnCancel.getAttribute("data-cancelar");
+        const dlg = document.getElementById("dlgCancelarPedido");
+        const hid = document.getElementById("cancelarPedidoId");
+        if (!dlg || !hid) return;
+        hid.value = id;
+        dlg.showModal();
+        return;
+      }
+
+      // --- Boleta ---
+      const btnBol = e.target.closest("[data-boleta]");
+      if (btnBol){
+        const id = btnBol.getAttribute("data-boleta");
+        const dlg = document.getElementById("dlgBoleta");
+        const hid = document.getElementById("boletaPedidoId");
+        const resumen = document.getElementById("boletaResumen");
+        if (!dlg || !hid || !resumen) return;
+
+        // buscar la compra del usuario
+        const compra = (Array.isArray(u.compras) ? u.compras : []).find(c => c.id === id);
+        if (!compra){ alert("Pedido no encontrado."); return; }
+
+        // preparar resumen HTML
+        let total = 0;
+        const filas = compra.items.map(it=>{
+          const p = prods.find(x=>x.codigo===it.codigo);
+          const nombre = p ? p.nombre : it.codigo;
+          const sub = Number(it.precio) * Number(it.cantidad);
+          total += sub;
+          return `
+            <tr>
+              <td>${nombre}<br><small>${it.codigo}</small></td>
+              <td style="text-align:right">${formatoPrecio(it.precio)}</td>
+              <td style="text-align:center">x${it.cantidad}</td>
+              <td style="text-align:right">${formatoPrecio(sub)}</td>
+            </tr>`;
+        }).join("");
+
+        const fecha = new Date(compra.fecha).toLocaleString("es-CL");
+        resumen.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div>
+              <strong>Level-Up Gamer</strong><br>
+              <small>Boleta electrónica</small><br>
+              <small>Pedido: ${compra.id}</small><br>
+              <small>Fecha: ${fecha}</small>
+            </div>
+            <div style="font-size:28px" aria-hidden="true">📄</div>
+          </div>
+          <hr>
+          <div style="margin:6px 0">
+            <small><strong>Cliente:</strong> ${u.nombres||""} ${u.apellidos||""} — ${u.correo||"—"}</small>
+          </div>
+          <div style="overflow:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:6px 0">Producto</th>
+                  <th style="text-align:right;padding:6px 0">Precio</th>
+                  <th style="text-align:center;padding:6px 0">Cant</th>
+                  <th style="text-align:right;padding:6px 0">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filas}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" style="text-align:right;padding-top:8px"><strong>Total</strong></td>
+                  <td style="text-align:right;padding-top:8px"><strong>${formatoPrecio(total)}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        `;
+
+        hid.value = id;
+        dlg.showModal();
+      }
     });
     cont.dataset.bind = "1";
   }
 
-  // Botones del modal
-  const dlg = document.getElementById("dlgCancelarPedido");
-  const btnOk = document.getElementById("btnConfirmarCancelacion");
-  const btnClose = document.getElementById("btnCerrarCancelacion");
+  // Botones del modal Cancelar
+  (function wireCancelar(){
+    const dlg = document.getElementById("dlgCancelarPedido");
+    const btnOk = document.getElementById("btnConfirmarCancelacion");
+    const btnClose = document.getElementById("btnCerrarCancelacion");
+    if (dlg && btnOk && !btnOk.dataset.bind){
+      btnOk.addEventListener("click", ()=>{
+        const id = document.getElementById("cancelarPedidoId").value;
+        if (!id) return;
+        const pedidos = obtenerPedidos();
+        const ped = pedidos.find(p => p.id === id);
+        if (ped && ped.estado === "pendiente") {
+          ped.estado = "cancelado";
+          guardarPedidos(pedidos);
+        }
+        dlg.close();
+        renderMisCompras();
+        alert("Pedido cancelado.");
+      });
+      btnOk.dataset.bind = "1";
+    }
+    if (dlg && btnClose && !btnClose.dataset.bind){
+      btnClose.addEventListener("click", ()=> dlg.close());
+      btnClose.dataset.bind = "1";
+    }
+  })();
 
-  if (dlg && btnOk && !btnOk.dataset.bind){
-    btnOk.addEventListener("click", ()=>{
-      const id = document.getElementById("cancelarPedidoId").value;
-      if (!id) return;
+  // Botones del modal Boleta
+  (function wireBoleta(){
+    const dlgB = document.getElementById("dlgBoleta");
+    const btnPDF = document.getElementById("btnGenerarPDF");
+    const btnCloseB = document.getElementById("btnCerrarBoleta");
 
-      // 1) Actualizar estado en la lista global
-      const pedidos = obtenerPedidos();
-      const ped = pedidos.find(p => p.id === id);
-      if (ped && ped.estado === "pendiente") {
-        ped.estado = "cancelado";
-        guardarPedidos(pedidos);
-      }
+    if (dlgB && btnPDF && !btnPDF.dataset.bind){
+      btnPDF.addEventListener("click",(e)=>{
+        e.preventDefault();
+        const id = document.getElementById("boletaPedidoId").value;
+        if (!id) return;
 
-      // 2) (Opcional) No cambiamos el histórico del usuario; solo el estado global
-      dlg.close();
-      renderMisCompras();
-      alert("Pedido cancelado.");
-    });
-    btnOk.dataset.bind = "1";
-  }
-  if (dlg && btnClose && !btnClose.dataset.bind){
-    btnClose.addEventListener("click", ()=> dlg.close());
-    btnClose.dataset.bind = "1";
-  }
+        // obtener compra y armar HTML imprimible
+        const compra = (Array.isArray(u.compras) ? u.compras : []).find(c => c.id === id);
+        if (!compra){ alert("Pedido no encontrado."); return; }
+
+        let total = 0;
+        const filas = compra.items.map(it=>{
+          const p = prods.find(x=>x.codigo===it.codigo);
+          const nombre = p ? p.nombre : it.codigo;
+          const sub = Number(it.precio) * Number(it.cantidad);
+          total += sub;
+          return `<tr>
+            <td>${nombre}<br><small>${it.codigo}</small></td>
+            <td style="text-align:right">${formatoPrecio(it.precio)}</td>
+            <td style="text-align:center">x${it.cantidad}</td>
+            <td style="text-align:right">${formatoPrecio(sub)}</td>
+          </tr>`;
+        }).join("");
+
+        const fecha = new Date(compra.fecha).toLocaleString("es-CL");
+        const html = `
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Boleta ${compra.id}</title>
+<style>
+  body{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; padding:20px; }
+  h1{ margin:0 0 6px 0; font-size:20px; }
+  table{ width:100%; border-collapse:collapse; }
+  th, td{ padding:6px 0; border-bottom:1px solid #ddd; font-size:14px; }
+  tfoot td{ border-bottom:0; }
+  .enc{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .enc .icon{ font-size:28px; }
+  .small{ color:#555; font-size:12px; }
+</style>
+</head>
+<body>
+  <div class="enc">
+    <div>
+      <h1>Level-Up Gamer</h1>
+      <div class="small">Boleta electrónica</div>
+      <div class="small">Pedido: ${compra.id}</div>
+      <div class="small">Fecha: ${fecha}</div>
+      <div class="small">Cliente: ${u.nombres||""} ${u.apellidos||""} — ${u.correo||"—"}</div>
+    </div>
+    <div class="icon">📄</div>
+  </div>
+  <hr>
+  <table>
+    <thead>
+      <tr>
+        <th style="text-align:left">Producto</th>
+        <th style="text-align:right">Precio</th>
+        <th style="text-align:center">Cant</th>
+        <th style="text-align:right">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${filas}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" style="text-align:right"><strong>Total</strong></td>
+        <td style="text-align:right"><strong>${formatoPrecio(total)}</strong></td>
+      </tr>
+    </tfoot>
+  </table>
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>
+        `.trim();
+
+        const w = window.open("", "_blank");
+        if (!w){ alert("Bloqueado por el navegador. Permití ventanas emergentes para generar el PDF."); return; }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+      });
+      btnPDF.dataset.bind = "1";
+    }
+
+    if (dlgB && btnCloseB && !btnCloseB.dataset.bind){
+      btnCloseB.addEventListener("click", ()=> dlgB.close());
+      btnCloseB.dataset.bind = "1";
+    }
+  })();
 }
+
 
 
 
@@ -617,26 +797,63 @@ function renderDestacados(){
 /* =============== CARRITO =============== */
 function obtenerCarrito(){ return obtener("carrito", []); }
 function guardarCarrito(c){ guardar("carrito", c); actualizarContadorCarrito(); renderCarrito(); }
-function agregarAlCarrito(codigo, cantidad=1){
+function agregarAlCarrito(codigo, cantidad = 1){
   const prods = obtener("productos", []);
   const prod = prods.find(p=>p.codigo===codigo);
   if(!prod) return;
 
+  const stock = Number(prod.stock) || 0;
+  if (stock <= 0){
+    alert("Sin stock disponible.");
+    return;
+  }
+
   const carrito = obtenerCarrito();
-  const i = carrito.findIndex(it=>it.codigo===codigo);
-  if(i>=0) carrito[i].cantidad += cantidad;
-  else carrito.push({codigo, cantidad});
+  const idx = carrito.findIndex(it=>it.codigo===codigo);
+  const enCarrito = idx >= 0 ? (Number(carrito[idx].cantidad)||0) : 0;
+
+  const restante = stock - enCarrito;
+  if (restante <= 0){
+    alert("Ya alcanzaste el stock disponible para este producto.");
+    return;
+  }
+
+  const aAgregar = Math.min(Number(cantidad)||1, restante);
+
+  if (idx >= 0) carrito[idx].cantidad = enCarrito + aAgregar;
+  else carrito.push({codigo, cantidad: aAgregar});
+
   guardarCarrito(carrito);
+
+  if ((Number(cantidad)||1) > aAgregar){
+    alert(`Solo quedaban ${restante} unidad(es) disponibles. Se ajustó la cantidad en el carrito.`);
+  }
 }
+
 function quitarDelCarrito(codigo){
   guardarCarrito(obtenerCarrito().filter(it=>it.codigo!==codigo));
 }
+
 function cambiarCantidad(codigo, nuevaCant){
+  const prods = obtener("productos", []);
+  const prod = prods.find(p=>p.codigo===codigo);
+  if(!prod) return;
+
+  const stock = Number(prod.stock) || 0;
+
   const c = obtenerCarrito();
   const i = c.findIndex(it=>it.codigo===codigo);
-  if(i>=0){ c[i].cantidad = Math.max(1, parseInt(nuevaCant||"1",10)); }
+  if(i>=0){
+    let cant = Math.max(1, parseInt(nuevaCant||"1",10));
+    if (cant > stock){
+      cant = stock;
+      alert(`La cantidad supera el stock disponible (${stock}). Se ajustó automáticamente.`);
+    }
+    c[i].cantidad = cant;
+  }
   guardarCarrito(c);
 }
+
 function renderCarrito(){
   const cont = document.getElementById("listaCarrito");
   if(!cont) return;
@@ -649,12 +866,17 @@ function renderCarrito(){
     const precio = precioConDescuento(p.precio);
     total += precio * it.cantidad;
     totalSinDesc += p.precio * it.cantidad;
+    // dentro de renderCarrito(), cuando generas cada item:
+    const stockDisp = Number(p.stock) || 0;
+
     return `<div class="item-carrito">
       <div><strong>${p.nombre}</strong><br><small>${p.codigo}</small></div>
       <div>${formatoPrecio(precio)}</div>
       <div>
-        <input type="number" min="1" value="${it.cantidad}" onchange="cambiarCantidad('${p.codigo}', this.value)">
+        <input type="number" min="1" max="${stockDisp}" value="${Math.min(it.cantidad, stockDisp)}"
+              onchange="cambiarCantidad('${p.codigo}', this.value)">
         <button class="btn secundario" onclick="quitarDelCarrito('${p.codigo}')">Quitar</button>
+        ${stockDisp <= (p.stockCritico ?? -1) ? '<small class="stock-critico">⚠ Bajo stock</small>' : ''}
       </div>
     </div>`;
   }).join("");
@@ -941,7 +1163,8 @@ function renderProductos(){
       <p class="precio">${formatoPrecio(precioConDescuento(p.precio))}</p>
       <div class="acciones">
         <a class="btn secundario" href="producto.html?codigo=${encodeURIComponent(p.codigo)}">Ver</a>
-        <button class="btn primario" data-add="${p.codigo}" type="button">Añadir</button>
+        <button class="btn primario" data-add="${p.codigo}" type="button"
+        ${Number(p.stock) > 0 ? "" : "disabled title='Sin stock'"}>Añadir</button>
       </div>
     </div>
   </article>
@@ -1095,11 +1318,15 @@ function cargarDetalle(){
   // Botón agregar
   const btn = document.getElementById("btnAgregarDetalle");
   if (btn){
-    btn.addEventListener("click", ()=>{
-      const cant = parseInt(document.getElementById("cantidadDetalle")?.value||"1",10);
-      agregarAlCarrito(codigo, cant);
-    });
+  if ((Number(prod.stock)||0) <= 0){
+    btn.disabled = true;
+    btn.title = "Sin stock";
   }
+  btn.addEventListener("click", ()=>{
+    const cant = parseInt(document.getElementById("cantidadDetalle")?.value||"1",10);
+    agregarAlCarrito(codigo, cant);
+  });
+}
 
   // Reseñas
   renderResenasProducto(codigo);
@@ -1125,7 +1352,26 @@ function cargarDetalle(){
 //     selAdmin.innerHTML = cats.map(c=>`<option>${c}</option>`).join("");
 //   }
 // }
+function descontarStock(items) {
+  const productos = obtener("productos", []);
+  let toSave = false;
 
+  items.forEach(it => {
+    const p = productos.find(x => x.codigo === it.codigo);
+    if (!p) return;
+    const cant = Number(it.cantidad) || 0;
+    const stockActual = Number(p.stock) || 0;
+    const nuevoStock = Math.max(0, stockActual - cant);
+    if (nuevoStock !== stockActual) {
+      p.stock = nuevoStock;
+      toSave = true;
+    }
+  });
+
+  if (toSave) {
+    guardar("productos", productos);
+  }
+}
 
 document.addEventListener("DOMContentLoaded", ()=>{
   // Guard de admin
@@ -1207,18 +1453,24 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const thAcciones = document.getElementById("thAcciones");
     if (thAcciones) thAcciones.style.display = esAdmin ? "" : "none";
 
-    cuerpo.innerHTML = prods.map(p=>`
-      <tr>
-        <td>${p.codigo}</td>
-        <td>${p.nombre}</td>
-        <td>${p.categoria}</td>
-        <td>${formatoPrecio(p.precio)}</td>
-        <td>${p.stock ?? "—"}</td>
-        <td style="${esAdmin ? "" : "display:none"}">
-          <a class="btn secundario" href="editar-producto.html?codigo=${encodeURIComponent(p.codigo)}">Editar</a>
-        </td>
-      </tr>
-    `).join("");
+    cuerpo.innerHTML = prods.map(p => {
+      const stock = Number(p.stock ?? 0);
+      const crit  = Number(p.stockCritico ?? NaN);
+      const esCritico = Number.isFinite(crit) && stock <= crit;
+
+      return `
+        <tr>
+          <td>${p.codigo}</td>
+          <td>${p.nombre}</td>
+          <td>${p.categoria}</td>
+          <td>${formatoPrecio(p.precio)}</td>
+          <td class="${esCritico ? "stock-critico" : ""}">${p.stock ?? "—"}</td>
+          <td style="${esAdmin ? "" : "display:none"}">
+            <a class="btn secundario" href="/editar-producto/${encodeURIComponent(p.codigo)}">Editar</a>
+          </td>
+        </tr>
+      `;
+    }).join("");
   }
 
 
@@ -1634,6 +1886,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // registrar compra
       registrarCompraAlUsuario(u, itemsCompra);
+      descontarStock(itemsCompra);
       
 
       alert(`Pago simulado. ¡Gracias por tu compra!\nGanaste ${ganados} puntos (Nivel: ${nivel}).`);

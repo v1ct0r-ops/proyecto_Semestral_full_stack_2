@@ -542,6 +542,12 @@ input:focus,select:focus,textarea:focus{
   font-size:14px; color:#cfe3ff; 
 }
 
+.stock-critico { 
+  color: #be0000;
+  font-weight: 600;
+}
+
+
 /* MIS COMPRAS */
 
 .badge{

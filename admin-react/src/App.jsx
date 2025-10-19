@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminPanel from "./components/Dashboard/AdminPanel.jsx";
-import PedidosPanel from "./components/pedido/PedidosPanel.jsx";
-import DetallePedidoPanel from "./components/pedido/DetallePedidoPanel.jsx";
+import ProductosPanel from "./components/Productos/ProductosPanel.jsx";
+import NuevoProductoPanel from "./components/Productos/NuevoProductoPanel.jsx";
+import EditarProductoPanel from "./components/Productos/EditarProductoPanel.jsx";
+import PedidosPanel from "./components/Pedidos/PedidosPanel.jsx";
+import DetallePedidoPanel from "./components/Pedidos/DetallePedidoPanel.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function NotFound() {
@@ -29,6 +32,35 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* productos */}
+        <Route
+          path="/admin/productos"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <ProductosPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* nuevo producto */}
+        <Route
+          path="/admin/producto-nuevo"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <NuevoProductoPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* editar producto */}
+        <Route 
+          path="/admin/editarProducto/:codigo" 
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <EditarProductoPanel />
+            </ProtectedRoute>
+          } />
 
         {/* pedidos */}
         <Route

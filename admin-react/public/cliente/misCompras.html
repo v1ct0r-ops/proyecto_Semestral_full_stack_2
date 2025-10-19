@@ -79,6 +79,23 @@
       <input type="hidden" id="cancelarPedidoId">
     </form>
   </dialog>
+
+  <dialog id="dlgBoleta" class="modal">
+    <form method="dialog" class="formulario" style="min-width:320px;max-width:540px">
+      <h3 style="display:flex;align-items:center;gap:8px">
+        📄 Generar boleta
+      </h3>
+      <div id="boletaResumen" class="boleta-resumen" style="margin-top:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="btnGenerarPDF" class="btn primario" value="ok">Generar PDF</button>
+        <button id="btnCerrarBoleta" class="btn secundario" value="cancel">Cerrar</button>
+      </div>
+      <input type="hidden" id="boletaPedidoId">
+    </form>
+  </dialog>
+
+
+
   
 
   <!-- Panel Mi Cuenta (desktop = derecha, móvil = izquierda) -->

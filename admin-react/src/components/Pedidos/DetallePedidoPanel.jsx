@@ -345,9 +345,8 @@ export default function DetallePedidoPanel() {
           <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
-          <a href="/admin/pedidos" className="activo">
-            Pedidos
-          </a>
+          <a href="/admin/pedidos" className="activo">Pedidos</a>
+          <a href="/admin/solicitud">Solicitud</a>
         </aside>
 
         <div className="panel">
@@ -418,6 +417,29 @@ export default function DetallePedidoPanel() {
                     ? "Pedido despachado"
                     : "Pedido cancelado"}
                 </button>
+
+                {/* Nuevo botón Generar Boleta */}
+                {(pedido.estado === "pendiente" || pedido.estado === "despachado") && (
+                  <button 
+                    style={{ paddingLeft: 16, marginLeft: 8 }}
+                    id="btnGenerarBoleta"
+                    className="btn secundario"
+                    onClick={() => {
+                      const dlg = document.getElementById("dlgBoleta");
+                      const hid = document.getElementById("boletaPedidoId");
+                      const resumen = document.getElementById("boletaResumen");
+                      
+                      if (dlg && hid && resumen) {
+                        hid.value = pedido.id;
+                        resumen.innerHTML = `<p>Boleta del pedido ${pedido.id}</p>`;
+                        dlg.showModal();
+                      }
+                    }}
+                  >
+                    Generar boleta
+                  </button>
+                )}
+
               </div>
             </>
           )}
