@@ -476,7 +476,7 @@ input:focus,select:focus,textarea:focus{
 }
 
 .exito{
-  color:#42f59b
+  color:#000000
 }
 
 .info{
@@ -647,6 +647,15 @@ input:focus,select:focus,textarea:focus{
   justify-content: center;
   text-align: center;
 }
+
+.panel-solicitud{
+  margin: 20px 17px 0px 17px;
+}
+
+.tarjeta{
+  margin-bottom: 17px;
+}
+
 /* CARRITO */
 
 .carrito-panel{

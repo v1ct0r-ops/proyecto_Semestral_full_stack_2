@@ -11,6 +11,8 @@ import EditarUsuarioPanel from "./components/Usuario/EditarUsuarioPanel.jsx";
 import HistorialUsuarioPanel from "./components/Usuario/HistorialUsuarioPanel.jsx";
 import PedidosPanel from "./components/Pedidos/PedidosPanel.jsx";
 import DetallePedidoPanel from "./components/Pedidos/DetallePedidoPanel.jsx";
+import SolicitudesPanel from "./components/Solicitud/SolicitudesPanel.jsx";
+import DetalleSolicitudPanel from "./components/Solicitud/DetalleSolicitudPanel.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function NotFound() {
@@ -144,6 +146,26 @@ export default function App() {
           element={
             <ProtectedRoute roles={["admin", "vendedor"]}>
               <DetallePedidoPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* solicitudes */}
+        <Route
+          path="/admin/solicitud/*"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <SolicitudesPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Detalle solicitud */}
+        <Route
+          path="/admin/solicitud/:id"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <DetalleSolicitudPanel />
             </ProtectedRoute>
           }
         />

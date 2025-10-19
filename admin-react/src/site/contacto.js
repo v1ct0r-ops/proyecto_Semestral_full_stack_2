@@ -65,17 +65,25 @@ formulario.addEventListener("submit", function(e) {
   }
   // Guarda solicitud en localStorage (clave 'solicitudes', campo 'descripcion')
   const ahora = new Date();
+  const seqActual = Number(localStorage.getItem("solicitudes_seq") || "0"); // 0 al inicio
+  const seqNuevo = seqActual + 1;
+  const id = `SOL-${seqNuevo}`;
   const mensaje = {
+    id,
+    titulo: id, // si quieres, cámbialo por el asunto
     nombre: nombre.value,
     correo: correo.value,
-    descripcion: contenido.value, // <--- usa descripcion
-    fecha: ahora.toLocaleDateString(),
+    descripcion: contenido.value,
+    fecha: ahora.toISOString(),
+    fechaLocal: ahora.toLocaleDateString(),
     hora: ahora.toLocaleTimeString(),
-    estado: "pendiente"
+    estado: "pendiente",
   };
-  let solicitudes = JSON.parse(localStorage.getItem("solicitudes")) || [];
+
+  const solicitudes = JSON.parse(localStorage.getItem("solicitudes")) || [];
   solicitudes.push(mensaje);
   localStorage.setItem("solicitudes", JSON.stringify(solicitudes));
+  localStorage.setItem("solicitudes_seq", String(seqNuevo));
 
   //  en consola los datos enviados
   console.log("Nombre:", nombre.value);

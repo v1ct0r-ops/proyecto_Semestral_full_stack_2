@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { obtener, guardar, usuarioActual } from "../../utils/storage";
 
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
@@ -86,7 +86,7 @@ function SideMenu({ open, onClose, onOpenAccount }) {
               e.preventDefault();
               localStorage.removeItem("sesion");
               onClose();
-              window.location.href = "../index.html";
+              window.location.href = "/cliente/index.html"; // ← ruta absoluta
             }}
           >
             Salir
@@ -182,142 +182,160 @@ function AccountPanel({ user, open, onClose }) {
   );
 }
 
-export default function EditarUsuarioPanel({ runParam }) {
-  // runParam: pásalo desde el router o del path /admin/usuario/editar/:run
+// --- Utils ---
+const formatearFecha = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}-${mm}-${yyyy} / ${hh}:${mi}`;
+};
+
+const colorEstado = (estado) => {
+  const e = String(estado || "").toLowerCase();
+  if (e === "completado" || e === "atendida" || e === "resuelta") return "green";
+  if (e === "pendiente") return "orange";
+  if (e === "cancelada" || e === "cancelado") return "red";
+  return "inherit";
+};
+
+const getTitulo = (s) => s.titulo || s.asunto || s.subject || `Solicitud ${s.id ?? ""}`;
+const getResumen = (s) => s.resumen || s.descripcion || s.mensaje || s.detalle || "";
+const getEstado = (s) => s.estado || s.status || "pendiente";
+const getFecha = (s) => s.fecha || s.createdAt || s.creado || s.fechaSolicitud || null;
+
+export default function DetalleSolicitudPanel({ idParam }) {
   const [user, setUser] = useState(null);
-  const [editRun, setEditRun] = useState(runParam || "");
-  const [cargado, setCargado] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [solicitud, setSolicitud] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
+
+  // captar el id desde la URL si no viene por prop
+  const idFromPath = useMemo(() => {
+    if (idParam) return idParam;
+    const parts = (window?.location?.pathname || "").split("/");
+    return decodeURIComponent(parts[parts.length - 1] || "");
+  }, [idParam]);
+
   const [isAdmin, setIsAdmin] = useState(false);
-  const [form, setForm] = useState({
-    run: "",
-    nombres: "",
-    apellidos: "",
-    correo: "",
-    tipoUsuario: "cliente",
-    direccion: "",
-    pass: "",
-  });  
-  const [msg, setMsg] = useState("");
 
-  useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
-      alert("Acceso restringido.");
-      window.location.href = "/index.html";
-      return;
+useEffect(() => {
+  const u = usuarioActual();
+  if (!u) {
+    alert("Acceso restringido.");
+    window.location.href = "/index.html";
+    return;
+  }
+  setUser(u);
+
+  // ejemplo: si el usuario tiene rol 'admin'
+  setIsAdmin(u.tipoUsuario === "admin");
+
+  const todas = obtener("solicitudes", []);
+  const encontrada =
+    todas.find((x) => String(x.id) === String(idFromPath)) ||
+    todas.find((x) => String(x.codigo) === String(idFromPath));
+  setSolicitud(encontrada || null);
+}, [idFromPath]);
+
+
+  if (!user) return null;
+
+  const marcarAtendida = () => {
+    const todas = Array.isArray(obtener("solicitudes", [])) ? obtener("solicitudes", []) : [];
+    const idx = todas.findIndex(
+      (x) => String(x.id) === String(idFromPath) || String(x.codigo) === String(idFromPath)
+    );
+    if (idx >= 0) {
+      // normalizamos como "completado" (coincide con el filtro del listado)
+      todas[idx] = { ...todas[idx], estado: "completado", actualizado: new Date().toISOString() };
+      guardar("solicitudes", todas);
+      setSolicitud(todas[idx]);
     }
-    if (u.tipoUsuario !== "admin") {
-      alert("Solo administradores pueden editar usuarios.");
-      window.location.href = "/admin";
-      return;
-    }
-    setUser(u);
-    setIsAdmin(u.tipoUsuario === "admin");
-
-    // Buscar por run
-    const lista = Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : [];
-    const run = runParam || (window?.location?.pathname?.split("/")?.pop() ?? "");
-    setEditRun(run);
-
-    const encontrado = lista.find((x) => String(x.run) === String(run));
-    if (encontrado) {
-       setForm({
-        correo: encontrado.correo || "",
-        tipoUsuario: encontrado.tipoUsuario || "cliente",
-        pass: encontrado.pass || "",
-      });
-      setCargado(true);
-    } else {
-      alert("Usuario no encontrado.");
-      window.location.href = "/admin/usuarios";
-    }
-  }, [runParam]);
-
-  if (!user || !cargado) return null;
-
-  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
-
-  const onSubmit = (e) => {
-    e.preventDefault();
-    const lista = Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : [];
-    const idx = lista.findIndex((x) => String(x.run) === String(editRun));
-    if (idx < 0) {
-      alert("Usuario no encontrado.");
-      return;
-    }
-    // Solo actualizamos correo, tipoUsuario y password
-    const actualizado = {
-      ...lista[idx],
-      correo: form.correo,
-      tipoUsuario: form.tipoUsuario,
-      pass: form.pass || lista[idx].pass,
-    };
-    lista[idx] = actualizado;
-    guardar("usuarios", lista);
-    setMsg("Usuario actualizado correctamente.");
-    setTimeout(() => (window.location.href = "/admin/usuarios"), 700);
   };
 
   return (
-    <div className="principal">
-      <Header
-        isMenuOpen={menuOpen}
-        onOpenAccount={() => setAccountOpen(true)}
-        onToggleMenu={() => setMenuOpen((v) => !v)}
-      />
-      <SideMenu
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        isAdmin={isAdmin}
-        onOpenAccount={() => setAccountOpen(true)}
-      />
+     <div className="principal">
+      {!user ? (
+        // Puedes mostrar un loader/placeholder aquí si quieres
+        <div style={{ padding: 16 }}><p className="info">Cargando…</p></div>
+      ) : (
+         <>
+          {/* Encabezado mínimo; puedes reutilizar tu Header/SideMenu si lo prefieres */}
+          <Header
+            isMenuOpen={menuOpen}
+            onOpenAccount={() => setAccountOpen(true)}
+            onToggleMenu={() => setMenuOpen((v) => !v)}
+          />
 
+          <SideMenu
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            onOpenAccount={() => setAccountOpen(true)}
+          />
       <section className="admin">
-        <aside className="menu-admin">
-          <a href="/admin">Inicio</a>
-          <a href="/admin/productos">Productos</a>
-          {isAdmin && <a href="/admin/usuarios" className="activo">Usuarios</a>}
-          <a href="/admin/pedidos">Pedidos</a>
-          <a href="/admin/solicitud">Solicitudes</a>
-        </aside>
+          <aside className="menu-admin">
+            <a href="/admin">Inicio</a>
+            <a href="/admin/productos">Productos</a>
+            <a href="/admin/usuarios" className="activo">Usuarios</a>
+            <a href="/admin/pedidos">Pedidos</a>
+            <a href="/admin/solicitud">Solicitudes</a>
+          </aside>
+
 
         <div className="panel">
-          <h1>Editar Usuario</h1>
-          <p className="info">RUN: <strong>{editRun}</strong></p>
+          <h1 id="tituloSolicitud">{solicitud ? getTitulo(solicitud) : "Solicitud"}</h1>
 
-          <form className="formulario" onSubmit={onSubmit} noValidate>
-            <div className="fila">
-              <label htmlFor="correo">Correo</label>
-              <input id="correo" name="correo" type="email" maxLength={100} required value={form.correo} onChange={onChange} />
-            </div>
+          {!solicitud ? (
+            <p className="info">No se encontró la solicitud (ID: {idFromPath}).</p>
+          ) : (
+            <>
+              <div id="detalleSolicitud">
+                <article className="tarjeta">
+                  <div className="contenido">
+                    <p style={{ margin: 0 }}>
+                      <strong>Estado: </strong>
+                      <span style={{ color: colorEstado(getEstado(solicitud)), fontWeight: 600 }}>
+                        {String(getEstado(solicitud)).toUpperCase()}
+                      </span>
+                      {" · "}
+                      <strong>Fecha:</strong> {formatearFecha(getFecha(solicitud))}
+                    </p>
 
-            <div className="fila">
-              <label htmlFor="tipoUsuario">Rol</label>
-              <select id="tipoUsuario" name="tipoUsuario" required value={form.tipoUsuario} onChange={onChange}>
-                <option value="cliente">Cliente</option>
-                <option value="vendedor">Vendedor</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
+                    {getResumen(solicitud) && (
+                      <p style={{ marginTop: 8 }}>
+                        <strong>Mensaje:</strong> {getResumen(solicitud)}
+                      </p>
+                    )}
 
-            <div className="fila">
-              <label htmlFor="pass">Contraseña</label>
-              <input id="pass" name="pass" type="password" maxLength={100} value={form.pass} onChange={onChange} />
-            </div>
+                    {/* Campos adicionales si existen */}
+                    {solicitud.nombre && <p><strong>Nombre:</strong> {solicitud.nombre}</p>}
+                    {solicitud.correo && <p><strong>Correo:</strong> {solicitud.correo}</p>}
+                    {solicitud.run && <p><strong>RUN:</strong> {solicitud.run}</p>}
+                  </div>
+                </article>
+              </div>
 
-            <button className="btn primario" type="submit">Guardar cambios</button>
-            {msg && <p className="exito" style={{ marginTop: 8 }}>{msg}</p>}
-          </form>
-        </div>
-      </section>
+              <div style={{ marginTop: 12 }}>
+                <button id="btnMarcarAtendida" className="btn exito" onClick={marcarAtendida}>
+                  Marcar como atendida
+                 </button>
+               </div>
+             </>
+           )}
+         </div>
+       </section>
 
-      <footer className="pie">
-        <p>© 2025 Level-Up Gamer — Chile</p>
-      </footer>
+       <footer className="pie">
+         <p>© 2025 Level-Up Gamer — Chile</p>
+       </footer>
 
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
-    </div>
-  );
+       <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+       </>
+       )}
+      </div>
+   );
 }

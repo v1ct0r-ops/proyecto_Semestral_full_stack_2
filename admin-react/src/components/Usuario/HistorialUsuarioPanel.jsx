@@ -75,11 +75,11 @@ function SideMenu({ open, onClose, onOpenAccount }) {
             Mi cuenta
           </a>
 
-          <a href="../cliente/index.html" onClick={onClose}>Inicio</a>
-          <a href="../cliente/productos.html" onClick={onClose}>Productos</a>
+          <a href="/cliente/index.html" onClick={onClose}>Inicio</a>
+          <a href="/cliente/productos.html" onClick={onClose}>Productos</a>
 
           <a
-            href="../cliente/index.html"
+            href="/cliente/index.html"
             id="linkSalirMov"
             data-bind="1"
             onClick={(e) => {
@@ -144,7 +144,7 @@ function AccountPanel({ user, open, onClose }) {
 
           <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
           <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
+          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
 
           <div className="panel-cuenta__bloque">
             <label><strong>Código de referido</strong></label>
@@ -162,13 +162,13 @@ function AccountPanel({ user, open, onClose }) {
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="../cliente/misCompras.html">Mis compras</a>
+            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
             <button
               id="btnSalirCuenta"
               className="btn"
               onClick={() => {
                 localStorage.removeItem("sesion");
-                window.location.href = "../cliente/index.html";
+                window.location.href = "/cliente/index.html";
               }}
             >
               Salir
