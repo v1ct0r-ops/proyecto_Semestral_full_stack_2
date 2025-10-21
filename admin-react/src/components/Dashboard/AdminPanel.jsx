@@ -309,6 +309,7 @@ export default function AdminPanelReact() {
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitud</a>
+          <a href="/admin/boleta">Boletas</a>
         </aside>
 
         {/* Panel principal */}

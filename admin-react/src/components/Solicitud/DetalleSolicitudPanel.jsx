@@ -283,6 +283,7 @@ useEffect(() => {
             <a href="/admin/usuarios" className="activo">Usuarios</a>
             <a href="/admin/pedidos">Pedidos</a>
             <a href="/admin/solicitud">Solicitudes</a>
+            <a href="/admin/boleta" className="activo">Boletas</a>
           </aside>
 
 

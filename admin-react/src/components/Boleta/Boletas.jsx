@@ -68,72 +68,10 @@ const Boleta = () => {
         setBoletas(Array.isArray(boletasData) ? boletasData : []);
     }, []);
 
-    // Generar boletas automáticamente para pedidos despachados sin boleta
+    
     const boletasCompletas = useMemo(() => {
-        if (!Array.isArray(pedidos) || !Array.isArray(boletas)) return boletas;
-
-        const pedidosDespachados = pedidos.filter(p => p.estado === "despachado");
-        const nuevasBoletas = [];
-
-        pedidosDespachados.forEach(pedido => {
-            // Verificar si ya existe una boleta para este pedido
-            const boletaExistente = boletas.find(b => b.pedidoId === pedido.id);
-            
-            if (!boletaExistente) {
-                // Obtener datos del cliente
-                const comprador = pedido.comprador || pedido.usuario || pedido.cliente || {};
-                const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim();
-                
-                // Generar número de boleta único
-                const timestamp = Date.now();
-                const numeroBoleta = `BOL-${String(timestamp).slice(-6)}`;
-                
-                // calcular subtotal y descuentos igual que en el cliente
-                const productosAll = Array.isArray(obtener("productos")) ? obtener("productos") : [];
-                const itemsPedido = (pedido.items || []).map(it => {
-                    const p = productosAll.find(x => x.codigo === it.codigo);
-                    return { ...it, nombre: p ? p.nombre : it.codigo };
-                });
-                const subtotal = itemsPedido.reduce((s, it) => s + (Number(it.precio || 0) * Number(it.cantidad || 1)), 0);
-                const VALOR_PUNTO = 10;
-                const TOPE_DESC_POR_PUNTOS = 0.20;
-                let puntosComprador = 0;
-                try {
-                    const usuarios = Array.isArray(obtener("usuarios")) ? obtener("usuarios") : [];
-                    const u = usuarios.find(x => (x.correo||"").toLowerCase() === ((pedido.comprador?.correo||pedido.usuario?.correo||pedido.cliente?.correo)||"").toLowerCase());
-                    puntosComprador = u ? Number(u.puntosLevelUp || 0) : 0;
-                } catch { puntosComprador = 0; }
-                const aplicaDuoc = ((pedido.comprador?.correo||pedido.usuario?.correo||pedido.cliente?.correo)||"").toLowerCase().endsWith("@duoc.cl");
-                const descuentoDuoc = aplicaDuoc ? Math.round(subtotal * 0.20) : 0;
-                const valorPuntosDisponibles = Math.max(0, puntosComprador * VALOR_PUNTO);
-                const maxPorPuntos = Math.round(subtotal * TOPE_DESC_POR_PUNTOS);
-                const descuentoPuntos = Math.min(valorPuntosDisponibles, maxPorPuntos);
-                const totalNum = Math.max(0, subtotal - descuentoDuoc - descuentoPuntos);
-
-                const nuevaBoleta = {
-                    numero: numeroBoleta,
-                    fecha: new Date().toISOString().split('T')[0],
-                    cliente: nombreCompleto || "Cliente",
-                    pedidoId: pedido.id,
-                    total: CLP(totalNum),
-                    totalNumerico: totalNum,
-                    fechaCreacion: new Date().toISOString()
-                };
-
-                nuevasBoletas.push(nuevaBoleta);
-            }
-        });
-
-        // Si hay nuevas boletas, guardarlas en localStorage
-        if (nuevasBoletas.length > 0) {
-            const todasLasBoletas = [...boletas, ...nuevasBoletas];
-            localStorage.setItem("boletas", JSON.stringify(todasLasBoletas));
-            setBoletas(todasLasBoletas);
-            return todasLasBoletas;
-        }
-
-        return boletas;
-    }, [pedidos, boletas]);
+        return Array.isArray(boletas) ? boletas : [];
+    }, [boletas]);
 
     const verDetallePedido = (boleta) => {
         const pedidoId = encodeURIComponent(String(boleta.pedidoId).replace(/^PED-?/i, ""));
@@ -167,7 +105,7 @@ const Boleta = () => {
                     <h1>Boletas Emitidas</h1>
                     <div className="filtros" style={{ marginBottom: 12 }}>
                         <p className="info">
-                            Las boletas se generan automáticamente cuando los pedidos son marcados como "despachados"
+                            
                         </p>
                     </div>
                     {boletasCompletas && boletasCompletas.length > 0 ? (
@@ -214,7 +152,7 @@ const Boleta = () => {
                         <div className="tarjeta">
                             <div className="contenido">
                                 <p className="info">No hay boletas emitidas.</p>
-                                <p className="info">Las boletas se generan automáticamente cuando marcas pedidos como "despachados".</p>
+                                
                                 <div style={{ marginTop: 12 }}>
                                     <button 
                                         className="btn secundario"

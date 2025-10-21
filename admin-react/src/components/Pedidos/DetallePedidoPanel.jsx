@@ -411,6 +411,7 @@ export default function DetallePedidoPanel() {
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos" className="activo">Pedidos</a>
           <a href="/admin/solicitud">Solicitud</a>
+          <a href="/admin/boleta">Boletas</a>
         </aside>
 
         <div className="panel">

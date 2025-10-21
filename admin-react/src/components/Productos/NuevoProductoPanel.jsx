@@ -337,6 +337,7 @@ export default function NuevoProductoPanel() {
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
+          <a href="/admin/boleta" >Boletas</a>
         </aside>
 
         <div className="panel">
