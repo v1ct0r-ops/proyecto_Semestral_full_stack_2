@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../img/LOGO.png" type="image/png">
+  <title>Detalle de Producto | Level-Up Gamer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/css/estilos.css" />
+  <script type="module" src="/src/site/app.js"></script>
+</head>
+<body>
+  <header class="encabezado">
+    <a class="logo" href="index.html">
+      <img src="../img/LOGO.png" alt="LLogo de la Pagina" class="logoBase">
+      <!-- <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span> -->
+    </a>
+
+    <!-- Boton version movil del NAV -->
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
+      <span class="icono-menu" aria-hidden="true">☰</span>
+      <span class="icono-cerrar" aria-hidden="true">✕</span>
+    </button>
+
+    <!-- NAV de escritorio -->
+    <nav class="navegacion">
+      <a href="index.html">Inicio</a>
+      <a href="productos.html">Productos</a>
+      <a href="blogs.html">Blogs</a>
+      <a href="nosotros.html">Nosotros</a>
+      <a href="contacto.html">Contacto</a>
+      <a id="linkAdmin" class="oculto" href="http://localhost:5173/admin">Admin</a>
+      <a id="linkVendedor" class="oculto" href="http://localhost:5173/admin">Vendedor</a>
+      <a id="linkRegistro" href="registro.html">Registro</a>
+      <a id="linkLogin" href="login.html">Ingresar</a>
+      <a class="carrito" href="productos.html#carrito">🛒 <span id="contadorCarrito">0</span></a>
+      
+      <!-- Botón perfil (solo escritorio) -->
+      <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
+        <img src="../img/imgPerfil.png" alt="" loading="lazy">
+      </button>
+    </nav>
+  </header>
+
+  <!-- Panel lateral -->
+  <aside id="menuLateral" class="menu-lateral" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="menu-cabecera">
+      <a class="logo" href="index.html">
+        <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span>
+      </a>
+    </div>
+    <!-- Replica la lista del NAV -->
+    <nav id="menuLista" class="menu-lista"></nav>
+  </aside>
+  <div id="cortina" class="cortina" hidden></div>
+
+  <main class="principal">
+
+    <section class="detalle">
+      <div class="detalle-imagen">
+        <img id="imagenDetalle" alt="Producto">
+      </div>
+      <div class="detalle-info">
+        <h1 id="nombreDetalle"></h1>
+        <p class="categoria" id="categoriaDetalle"></p>
+        <p class="precio"><span id="precioDetalle"></span></p>
+        <p id="descripcionDetalle" class="descripcion"></p>
+        <div class="acciones">
+          <label>Cantidad
+            <input id="cantidadDetalle" type="number" min="1" value="1">
+          </label>
+          <button id="btnAgregarDetalle" class="btn primario">Añadir al carrito</button>
+        </div>
+        <div class="extra-info">
+          <a id="linkVerMas" href="#" class="link-ver-mas">Ver más</a>
+          <div id="boxDetalles" class="detalles-box" hidden>
+            <h4>Información extra</h4>
+            <p id="detallesDetalle"></p>
+          </div>
+        </div>        
+      </div>
+    </section>
+
+    <section id="resenas" class="resenas">
+      <h3>Opiniones</h3>
+      <p>Promedio: <strong id="promedioResenas">0.0</strong> / 5 (<span id="cantidadResenas">0</span> reseñas)</p>
+
+      <div id="listaResenas"></div>
+
+      <div id="formResenaBox" class="oculto">
+        <h4>Dejá tu reseña</h4>
+        <label>Puntuación (1 a 5)
+          <select id="puntajeResena">
+            <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
+          </select>
+        </label>
+        <label>Comentario
+          <textarea id="comentarioResena" rows="3" placeholder="¿Qué te pareció el producto?"></textarea>
+        </label>
+        <button id="btnEnviarResena" class="btn primario">Publicar</button>
+        <p id="msgResena" class="info"></p>
+      </div>
+
+      <p id="bloqueoResena" class="info oculto">
+        Debés haber comprado este producto para poder calificarlo.
+      </p>
+    </section>
+
+  </main>
+  <footer class="pie">
+    <p>© 2025 Level-Up Gamer — Chile</p>
+    <p class="pie-links">
+      <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://x.com" target="_blank" rel="noopener">X</a> ·
+      <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+    </p>
+  </footer>
+
+  <dialog id="dlgAvisoStock" class="modal">
+    <form method="dialog" class="formulario" style="min-width:320px;max-width:480px">
+      <h3 id="dlgAvisoStockTitulo">Aviso</h3>
+      <p id="dlgAvisoStockMsg">Mensaje</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn" value="ok" autofocus>Aceptar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Panel Mi Cuenta (desktop = derecha, móvil = izquierda) -->
+  <aside id="panelCuenta" class="panel-cuenta" aria-hidden="true">
+    <div class="panel-cuenta__cab">
+      <h3>Mi cuenta</h3>
+      <button id="btnCerrarCuenta" class="panel-cuenta__cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="panel-cuenta__contenido">
+      <div class="panel-cuenta__avatar">
+        <img src="../img/imgPerfil.png" alt="Foto de perfil">
+      </div>
+
+      <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
+      <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
+      <a class="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
+
+      <div class="panel-cuenta__bloque">
+        <label><strong>Código de referido</strong></label>
+        <div class="panel-cuenta__ref">
+          <input id="cuentaCodigoReferido" readonly>
+          <button id="btnCopiarCodigo" class="btn secundario" type="button">Copiar</button>
+        </div>
+        <small class="pista">Comparte este código. Si alguien se registra con él, ganás puntos.</small>
+      </div>
+
+      <div class="panel-cuenta__bloque">
+        <p><strong>Puntos LevelUp:</strong> <span id="cuentaPuntos">0</span></p>
+        <p><strong>Nivel:</strong> <span id="cuentaNivel">Bronce</span></p>
+        <small class="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+      </div>
+
+      <div class="panel-cuenta__acciones">
+        <a class="btn secundario" href="misCompras.html">Mis compras</a>
+        <button id="btnSalirCuenta" class="btn">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+<!-- Cortina del panel -->
+<div id="cortinaCuenta" class="cortina" hidden></div>
+
+</body>
+</html>

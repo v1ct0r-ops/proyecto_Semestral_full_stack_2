@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../img/LOGO.png" type="image/png">
+  <title>Registro | Level-Up Gamer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/css/estilos.css" />
+  <script type="module" src="/src/site/app.js"></script>
+</head>
+<body>
+  <header class="encabezado">
+    <a class="logo" href="index.html">
+      <img src="../img/LOGO.png" alt="LLogo de la Pagina" class="logoBase">
+      <!-- <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span> -->
+    </a>
+
+    <!-- Boton version movil del NAV -->
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
+      <span class="icono-menu" aria-hidden="true">☰</span>
+      <span class="icono-cerrar" aria-hidden="true">✕</span>
+    </button>
+
+    <!-- NAV de escritorio -->
+    <nav class="navegacion">
+      <a href="index.html">Inicio</a>
+      <a href="productos.html">Productos</a>
+      <a href="blogs.html">Blogs</a>
+      <a href="nosotros.html">Nosotros</a>
+      <a href="contacto.html">Contacto</a>
+      <a id="linkAdmin" class="oculto" href="http://localhost:5173/admin">Admin</a>
+      <a id="linkVendedor" class="oculto" href="http://localhost:5173/admin">Vendedor</a>
+      <a id="linkRegistro" href="registro.html">Registro</a>
+      <a id="linkLogin" href="login.html">Ingresar</a>
+      <a class="carrito" href="productos.html#carrito">🛒 <span id="contadorCarrito">0</span></a>
+      
+      <!-- Botón perfil (solo escritorio) -->
+      <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
+        <img src="../img/imgPerfil.png" alt="" loading="lazy">
+      </button>
+    </nav>
+  </header>
+
+  <!-- Panel lateral -->
+  <aside id="menuLateral" class="menu-lateral" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="menu-cabecera">
+      <a class="logo" href="index.html">
+        <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span>
+      </a>
+    </div>
+    <!-- Replica la lista del NAV -->
+    <nav id="menuLista" class="menu-lista"></nav>
+  </aside>
+  <div id="cortina" class="cortina" hidden></div>
+
+  <main class="principal">
+
+<section class="formulario-contenedor">
+  <h1>Crear cuenta</h1>
+  <form id="formRegistro" novalidate class="formulario">
+    <div class="fila">
+      <label for="run">RUN (sin puntos ni guión)</label>
+      <input id="run" maxlength="9" placeholder="19011022K" autocomplete="off" required>
+      <small class="pista">Ej: 19011022K</small>
+      <div class="error" id="errRun"></div>
+    </div>
+    <div class="fila">
+      <label for="nombres">Nombres</label>
+      <input id="nombres" maxlength="50" required>
+      <div class="error" id="errNombres"></div>
+    </div>
+    <div class="fila">
+      <label for="apellidos">Apellidos</label>
+      <input id="apellidos" maxlength="100" required>
+      <div class="error" id="errApellidos"></div>
+    </div>
+    <div class="fila">
+      <label for="correo">Correo</label>
+      <input id="correo" type="email" maxlength="100" required placeholder="usuario@duoc.cl / @gmail.com">
+      <small class="pista">Correos permitidos: @duoc.cl, @profesor.duoc.cl, @gmail.com</small>
+      <div class="error" id="errCorreo"></div>
+    </div>
+    <div class="fila">
+      <label for="fechaNacimiento">Fecha de Nacimiento</label>
+      <input id="fechaNacimiento" type="date" required>
+      <small class="pista">Solo mayores de 18 años</small>
+      <div class="error" id="errFecha"></div>
+    </div>
+    <div class="fila">
+      <label for="tipoUsuario">Tipo de Usuario</label>
+      <select id="tipoUsuario" required>
+        <option value="cliente">Cliente</option>
+        <option value="vendedor">Vendedor</option>
+        <option value="admin">Administrador</option>
+      </select>
+      <div class="error" id="errTipo"></div>
+    </div>
+    <div class="fila">
+      <label for="region">Región</label>
+      <select id="region" required></select>
+      <div class="error" id="errRegion"></div>
+    </div>
+    <div class="fila">
+      <label for="comuna">Comuna</label>
+      <select id="comuna" required></select>
+      <div class="error" id="errComuna"></div>
+    </div>
+    <div class="fila">
+      <label for="direccion">Dirección</label>
+      <input id="direccion" maxlength="300" required>
+      <div class="error" id="errDireccion"></div>
+    </div>
+    <div class="fila dos">
+      <div>
+        <label for="password">Contraseña</label>
+        <input id="password" type="password" minlength="4" maxlength="10" required>
+        <div class="error" id="errPass"></div>
+      </div>
+      <div>
+        <label for="password2">Confirmar</label>
+        <input id="password2" type="password" minlength="4" maxlength="10" required>
+        <div class="error" id="errPass2"></div>
+      </div>
+    </div>
+    <div class="fila">
+      <label for="referido">Código de Referido (opcional)</label>
+      <input id="referido" maxlength="20" placeholder="GAMER123">
+    </div>
+    <button class="btn primario" type="submit">Crear cuenta</button>
+    <p class="info">¿Ya tenés cuenta? <a href="login.html">Ingresar</a></p>
+    <p id="msgRegistro" class="exito"></p>
+  </form>
+</section>
+
+  </main>
+  <footer class="pie">
+    <p>© 2025 Level-Up Gamer — Chile</p>
+    <p class="pie-links">
+      <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://x.com" target="_blank" rel="noopener">X</a> ·
+      <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+    </p>
+  </footer>
+
+  <!-- Panel Mi Cuenta (desktop = derecha, móvil = izquierda) -->
+  <aside id="panelCuenta" class="panel-cuenta" aria-hidden="true">
+    <div class="panel-cuenta__cab">
+      <h3>Mi cuenta</h3>
+      <button id="btnCerrarCuenta" class="panel-cuenta__cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="panel-cuenta__contenido">
+      <div class="panel-cuenta__avatar">
+        <img src="../img/imgPerfil.png" alt="Foto de perfil">
+      </div>
+
+      <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
+      <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
+      <a class="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
+
+      <div class="panel-cuenta__bloque">
+        <label><strong>Código de referido</strong></label>
+        <div class="panel-cuenta__ref">
+          <input id="cuentaCodigoReferido" readonly>
+          <button id="btnCopiarCodigo" class="btn secundario" type="button">Copiar</button>
+        </div>
+        <small class="pista">Comparte este código. Si alguien se registra con él, ganás puntos.</small>
+      </div>
+
+      <div class="panel-cuenta__bloque">
+        <p><strong>Puntos LevelUp:</strong> <span id="cuentaPuntos">0</span></p>
+        <p><strong>Nivel:</strong> <span id="cuentaNivel">Bronce</span></p>
+        <small class="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+      </div>
+
+      <div class="panel-cuenta__acciones">
+        <a class="btn secundario" href="misCompras.html">Mis compras</a>
+        <button id="btnSalirCuenta" class="btn">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+<!-- Cortina del panel -->
+<div id="cortinaCuenta" class="cortina" hidden></div>
+
+</body>
+</html>
