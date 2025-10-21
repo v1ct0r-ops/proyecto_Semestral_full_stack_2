@@ -13,6 +13,9 @@ import PedidosPanel from "./components/Pedidos/PedidosPanel.jsx";
 import DetallePedidoPanel from "./components/Pedidos/DetallePedidoPanel.jsx";
 import SolicitudesPanel from "./components/Solicitud/SolicitudesPanel.jsx";
 import DetalleSolicitudPanel from "./components/Solicitud/DetalleSolicitudPanel.jsx";
+import ReportesPanel from "./components/Reportes/ReportesPanel.jsx";
+import Boleta from "./components/Boleta/Boleta.jsx";
+import DetalleBoleta from "./components/Boleta/DetalleBoleta.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import BoletasPanel from "./components/Boleta/Boletas.jsx";
 import DetalleBoleta from "./components/Boleta/DetalleBoleta.jsx";
@@ -187,6 +190,36 @@ export default function App() {
           element={
             <ProtectedRoute roles={["admin", "vendedor"]}>
               <DetalleSolicitudPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Reportes */}
+        <Route
+          path="/admin/reportes"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <ReportesPanel />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Detalle boleta */}
+        <Route
+          path="/admin/boleta/:numero"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <DetalleBoleta />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Boletas */}
+        <Route
+          path="/admin/boleta"
+          element={
+            <ProtectedRoute roles={["admin", "vendedor"]}>
+              <Boleta />
             </ProtectedRoute>
           }
         />

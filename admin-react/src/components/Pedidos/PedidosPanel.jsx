@@ -407,6 +407,7 @@ export default function PedidosPanel() {
           <a href="/admin/pedidos" className="activo">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
+          <a href="/admin/reportes">Reportes</a>
         </aside>
 
         {/* Panel principal */}
