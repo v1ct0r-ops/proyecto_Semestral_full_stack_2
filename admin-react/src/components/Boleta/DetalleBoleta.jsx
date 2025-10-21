@@ -1,12 +1,15 @@
-// src/components/pedido/PedidosPanel.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { obtener, usuarioActual } from "../../utils/storage";
 
-/* ================= Helpers ================= */
+// ===== Helpers =====
 const CLP = (n) =>
   typeof n === "number"
-    ? n.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
+    ? n.toLocaleString("es-CL", {
+        style: "currency", 
+        currency: "CLP", 
+        maximumFractionDigits: 0,
+      })
     : "—";
 
 const fechaHoraLarga = (ts) => {
@@ -14,7 +17,7 @@ const fechaHoraLarga = (ts) => {
   const d = new Date(ts);
   return d.toLocaleString("es-CL", {
     day: "2-digit",
-    month: "2-digit",
+    month: "2-digit", 
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
@@ -22,26 +25,14 @@ const fechaHoraLarga = (ts) => {
   });
 };
 
-const estadoBadgeClass = (estado) => {
-  const e = (estado || "").toLowerCase();
-  if (e === "despachado") return "badge exito";
-  if (e === "cancelado") return "badge peligro";
-  return "badge secundario"; // pendiente u otros
-};
-const estadoLabel = (estado) => {
-  const e = (estado || "").toLowerCase();
-  if (e === "despachado") return "Despachado";
-  if (e === "cancelado") return "Cancelado";
-  return "Pendiente";
-};
-
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
-/* ============== Datos de sesión (LS) ============== */
+// ===== Hook de sesión =====
 function useSessionData() {
   const [user, setUser] = useState(null);
   const [pedidos, setPedidos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+  const [boletas, setBoletas] = useState([]);
+  const [productos, setProductos] = useState([]);
 
   useEffect(() => {
     const u = usuarioActual();
@@ -52,13 +43,14 @@ function useSessionData() {
     }
     setUser(u);
     setPedidos(Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []);
-    setUsuarios(Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : []);
+    setBoletas(Array.isArray(obtener("boletas", [])) ? obtener("boletas", []) : []);
+    setProductos(Array.isArray(obtener("productos", [])) ? obtener("productos", []) : []);
   }, []);
 
-  return { user, pedidos, usuarios };
+  return { user, pedidos, boletas, productos };
 }
 
-/* ============== Header y SideMenu ============== */
+// ===== Components Header/SideMenu/AccountPanel =====
 function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
   return (
     <header className="encabezado">
@@ -114,7 +106,6 @@ function SideMenu({ open, onClose, onOpenAccount }) {
           </a>
         </div>
 
-        {/* SOLO estos ítems */}
         <nav id="menuLista" className="menu-lista" data-clonado="1">
           <a
             href="#"
@@ -146,13 +137,11 @@ function SideMenu({ open, onClose, onOpenAccount }) {
         </nav>
       </aside>
 
-      {/* Cortina */}
       <div id="cortina" className="cortina" hidden={!open} onClick={onClose} />
     </>
   );
 }
 
-/* ============== AccountPanel ============== */
 function AccountPanel({ user, open, onClose }) {
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
@@ -229,123 +218,59 @@ function AccountPanel({ user, open, onClose }) {
         </div>
       </aside>
 
-      {/* Cortina del panel */}
       <div id="cortinaCuenta" className="cortina" onClick={onClose} />
     </>
   );
 }
 
-/* ============== Tarjeta Pedido ============== */
-function PedidoCard({ pedido, usuarios, onVerDetalle }) {
-  // 👇 AHORA incluimos 'pedido.comprador' como primera opción
-  const compradorDirect =
-    pedido.comprador || // <- clave en tus datos
-    pedido.usuario ||
-    pedido.cliente ||
-    pedido.user ||
-    {
-      nombres: pedido.nombres,
-      apellidos: pedido.apellidos,
-      correo: pedido.correo,
-    };
-
-  // Si aún faltan datos, buscamos en 'usuarios' por idUsuario o correo
-  const compradorResolved =
-    (compradorDirect?.nombres || compradorDirect?.apellidos || compradorDirect?.correo)
-      ? compradorDirect
-      : (pedido.idUsuario &&
-          Array.isArray(usuarios) &&
-          usuarios.find((u) => String(u.id) === String(pedido.idUsuario))) ||
-        (pedido.correo &&
-          Array.isArray(usuarios) &&
-          usuarios.find(
-            (u) => (u.correo || "").toLowerCase() === (pedido.correo || "").toLowerCase()
-          )) ||
-        {};
-
-  const nombreCompleto = `${compradorResolved.nombres || compradorResolved.nombre || ""} ${
-    compradorResolved.apellidos || compradorResolved.apellido || ""
-  }`.trim();
-
-  const correo = compradorResolved.correo || compradorResolved.email || pedido.correo || "—";
-
-  const codigo = pedido.codigo || pedido.id || `PED-${pedido.timestamp || ""}`;
-  const createdAt = pedido.fecha || pedido.createdAt || pedido.timestamp || pedido.fechaCreacion;
-
-  // 👇 tu envío viene como 'pedido.envio'
-  const envio = pedido.envio || pedido.direccionEnvio || {};
-  const dir = envio.direccion || envio.calle || envio.detalle || "—";
-  const comuna = envio.comuna || "—";
-  const region = envio.region || "—";
-
-  const total = pedido.total || pedido.totalCLP || 0;
-  const estado = (pedido.estado || "pendiente").toLowerCase();
-
-  return (
-    <article className="tarjeta" style={{ marginTop: 12 }}>
-      <div className="contenido">
-        <h3 style={{ marginTop: 0, marginBottom: 8 }}>
-          {String(codigo).startsWith("PED") ? codigo : `PED-${codigo}`}
-        </h3>
-
-        <p className="info" style={{ margin: "6px 0 10px" }}>
-          {fechaHoraLarga(createdAt)} · {nombreCompleto || "—"} ({correo})
-        </p>
-
-        <p className="info" style={{ margin: "6px 0" }}>
-          <strong>Envío:</strong> {dir}, {comuna}, {region}
-        </p>
-
-        <p style={{ margin: "8px 0 12px" }}>
-          <strong>Total:</strong> {CLP(total)}
-        </p>
-
-        <div className="acciones" style={{ gap: 8 }}>
-          <button
-            type="button"
-            className={estadoBadgeClass(estado)}
-            onClick={onVerDetalle}
-            title="Ver detalle del pedido"
-            style={{ cursor: "pointer" }}
-          >
-            {estadoLabel(estado)}
-          </button>
-
-          <button
-            className="btn secundario"
-            onClick={onVerDetalle}
-            style={{ cursor: "pointer" }}
-          >
-            Ver detalle
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-/* ============== Página ============== */
-export default function PedidosPanel() {
+const DetalleBoleta = () => {
+  const { numero } = useParams();
   const navigate = useNavigate();
-  const { user, pedidos, usuarios } = useSessionData();
-
+  const { user, pedidos, boletas, productos } = useSessionData();
+  
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [filtro, setFiltro] = useState("");
 
-  // Siempre llamamos hooks arriba (evitar cambios de orden)
-  const pedidosFiltrados = useMemo(() => {
-    const arr = Array.isArray(pedidos) ? pedidos : [];
-    if (!filtro) return arr;
-    return arr.filter((p) => (p.estado || "").toLowerCase() === filtro);
-  }, [pedidos, filtro]);
+  // Buscar la boleta y el pedido relacionado
+  const boleta = useMemo(() => {
+    if (!Array.isArray(boletas) || !numero) return null;
+    return boletas.find(b => b.numero === decodeURIComponent(numero));
+  }, [boletas, numero]);
+
+  const pedido = useMemo(() => {
+    if (!boleta || !Array.isArray(pedidos)) return null;
+    return pedidos.find(p => p.id === boleta.pedidoId);
+  }, [boleta, pedidos]);
+
+  // Items del pedido enriquecidos con información del producto
+  const items = useMemo(() => {
+    if (!pedido || !Array.isArray(productos)) return [];
+    return (pedido.items || []).map(item => {
+      const producto = productos.find(p => p.codigo === item.codigo);
+      return {
+        ...item,
+        nombre: producto?.nombre || item.codigo || "Producto no encontrado"
+      };
+    });
+  }, [pedido, productos]);
 
   useEffect(() => {
     document.body.classList.toggle("menu-abierto", menuOpen);
     return () => document.body.classList.remove("menu-abierto");
   }, [menuOpen]);
 
+  if (!user) return null;
+
   const isAdmin = user?.tipoUsuario === "admin";
+
+  // Datos del cliente para mostrar en la boleta
+  const comprador = pedido?.comprador || pedido?.usuario || pedido?.cliente || {};
+  const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim();
+  const correo = comprador.correo || comprador.email || "—";
+
+  const imprimirBoleta = () => {
+    window.print();
+  };
 
   return (
     <div className="principal">
@@ -367,46 +292,125 @@ export default function PedidosPanel() {
           <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
-          <a href="/admin/pedidos" className="activo">Pedidos</a>
+          <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
-          <a href="/admin/boleta">Boletas</a>
+          <a href="/admin/boleta" className="activo">Boletas</a>
           <a href="/admin/reportes">Reportes</a>
         </aside>
 
         {/* Panel principal */}
         <div className="panel">
-          <h1>Pedidos</h1>
+          <h1>Detalle de Boleta</h1>
 
-          <div className="filtros" style={{ marginBottom: 12 }}>
-            <select id="filtroPedidos" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
-              <option value="">Todos</option>
-              <option value="pendiente">Pendientes</option>
-              <option value="despachado">Despachados</option>
-              <option value="cancelado">Cancelados</option>
-            </select>
-          </div>
-
-          {!user ? (
-            <p className="info">Cargando…</p>
-          ) : (
-            <div id="listaPedidos" className="tarjetas">
-              {pedidosFiltrados.length === 0 ? (
-                <p className="info">No hay pedidos para mostrar.</p>
-              ) : (
-                pedidosFiltrados.map((p) => {
-                  const raw = p.id || p.codigo || p.timestamp;
-                  const pid = encodeURIComponent(String(raw).replace(/^PED-?/i, ""));
-                  return (
-                    <PedidoCard
-                      key={raw}
-                      pedido={p}
-                      usuarios={usuarios}
-                      onVerDetalle={() => navigate(`/admin/pedidos/${pid}`)}
-                    />
-                  );
-                })
-              )}
+          {!boleta ? (
+            <div className="tarjeta">
+              <div className="contenido">
+                <p className="info">Boleta no encontrada.</p>
+                <div className="acciones" style={{ marginTop: 8 }}>
+                  <button className="btn secundario" onClick={() => navigate("/admin/boleta")}>
+                    Volver a Boletas
+                  </button>
+                </div>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Información de la boleta */}
+              <div className="tarjeta" style={{ marginBottom: 16 }}>
+                <div className="contenido">
+                  <h2 style={{ marginTop: 0, color: "var(--azul)" }}>
+                    Boleta {boleta.numero}
+                  </h2>
+                  
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
+                    <div>
+                      <p><strong>Fecha de Emisión:</strong></p>
+                      <p>{boleta.fecha}</p>
+                    </div>
+                    <div>
+                      <p><strong>Cliente:</strong></p>
+                      <p>{boleta.cliente}</p>
+                      {correo !== "—" && <p><small>{correo}</small></p>}
+                    </div>
+                    <div>
+                      <p><strong>Pedido Relacionado:</strong></p>
+                      <p>{boleta.pedidoId}</p>
+                    </div>
+                    <div>
+                      <p><strong>Total:</strong></p>
+                      <p style={{ fontSize: "1.2em", color: "var(--verde)" }}>{boleta.total}</p>
+                    </div>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="acciones" style={{ gap: 8 }}>
+                    <button 
+                      className="btn secundario" 
+                      onClick={() => navigate("/admin/boleta")}
+                    >
+                      Volver a Boletas
+                    </button>
+                    {pedido && (
+                      <button 
+                        className="btn secundario" 
+                        onClick={() => {
+                          const pedidoId = encodeURIComponent(String(pedido.id).replace(/^PED-?/i, ""));
+                          navigate(`/admin/pedidos/${pedidoId}`);
+                        }}
+                      >
+                        Ver Pedido
+                      </button>
+                    )}
+                    <button 
+                      className="btn exito" 
+                      onClick={imprimirBoleta}
+                    >
+                      Imprimir Boleta
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detalle de items */}
+              {items.length > 0 && (
+                <div className="tarjeta">
+                  <div className="contenido">
+                    <h3>Detalle de Productos</h3>
+                    
+                    <div style={{ overflowX: "auto" }}>
+                      <table className="tabla" style={{ width: "100%", marginTop: 12 }}>
+                        <thead>
+                          <tr>
+                            <th>Producto</th>
+                            <th>Código</th>
+                            <th>Precio Unit.</th>
+                            <th>Cantidad</th>
+                            <th>Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.nombre}</td>
+                              <td><small>{item.codigo}</small></td>
+                              <td>{CLP(item.precio || 0)}</td>
+                              <td>{item.cantidad || 1}</td>
+                              <td>{CLP((item.precio || 0) * (item.cantidad || 1))}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ borderTop: "2px solid var(--borde)", fontWeight: "bold" }}>
+                            <td colSpan="4">TOTAL</td>
+                            <td style={{ color: "var(--verde)" }}>{boleta.total}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -419,4 +423,6 @@ export default function PedidosPanel() {
       <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
     </div>
   );
-}
+};
+
+export default DetalleBoleta;

@@ -303,7 +303,8 @@ export default function ReportesPanel() {
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
-          <a href="/admin/solicitud">Solicitud</a>
+          <a href="/admin/solicitud">Solicitudes</a>
+          <a href="/admin/boleta">Boletas</a>
           <a href="/admin/reportes" className="activo">Reportes</a>
         </aside>
 
@@ -462,7 +463,7 @@ export default function ReportesPanel() {
                 </div>
               </div>
 
-              <h4 style={{ marginTop: 8 }}>Top 10 más vendidos</h4>
+              <h4 style={{ marginTop: 20 }}>Top 10 más vendidos</h4>
               <table className="tabla">
                 <thead>
                   <tr>

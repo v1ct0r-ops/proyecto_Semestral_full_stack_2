@@ -301,10 +301,12 @@ export default function ReportesProductosPanel() {
       <section className="admin">
         <aside className="menu-admin">
           <a href="/admin">Inicio</a>
-          <a href="/admin/productos">Productos</a>
+          <a href="/admin/productos" className="activo">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
+          <a href="/admin/boleta">Boletas</a>
+          <a href="/admin/reportes">Reportes</a>
         </aside>
 
         <div className="panel">
