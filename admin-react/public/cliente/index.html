@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../img/LOGO.png" type="image/png">
+  <title>Level-Up Gamer | Inicio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/css/estilos.css" />
+  <script type="module" src="/src/site/app.js"></script>
+</head>
+<body>
+  <header class="encabezado">
+    <a class="logo" href="index.html">
+      <img src="../img/LOGO.png" alt="LLogo de la Pagina" class="logoBase">
+      <!-- <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span> -->
+    </a>
+
+    <!-- Boton version movil del NAV -->
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
+      <span class="icono-menu" aria-hidden="true">☰</span>
+      <span class="icono-cerrar" aria-hidden="true">✕</span>
+    </button>
+
+    <!-- NAV de escritorio -->
+    <nav class="navegacion">
+      <a href="index.html">Inicio</a>
+      <a href="productos.html">Productos</a>
+      <a href="blogs.html">Blogs</a>
+      <a href="nosotros.html">Nosotros</a>
+      <a href="contacto.html">Contacto</a>
+      <a id="linkAdmin" class="oculto" href="http://localhost:5173/admin">Admin</a>
+      <a id="linkVendedor" class="oculto" href="http://localhost:5173/admin">Vendedor</a>
+      <a id="linkRegistro" href="registro.html">Registro</a>
+      <a id="linkLogin" href="login.html">Ingresar</a>
+      <a class="carrito" href="productos.html#carrito">🛒 <span id="contadorCarrito">0</span></a>
+      
+      <!-- Botón perfil (escritorio) -->
+      <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
+        <img src="../img/imgPerfil.png" alt="" loading="lazy">
+      </button>
+    </nav>
+  </header>
+
+  <!-- Panel lateral -->
+  <aside id="menuLateral" class="menu-lateral" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="menu-cabecera">
+      <a class="logo" href="index.html">
+        <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span>
+      </a>
+    </div>
+    <!-- Replica la lista del NAV -->
+    <nav id="menuLista" class="menu-lista"></nav>
+  </aside>
+  <div id="cortina" class="cortina" hidden></div>
+
+  <main class="principal">
+
+    <section class="hero">
+      <div class="hero-texto">
+        <h1 class="titulo">Sube de nivel tu setup</h1>
+        <p class="subtitulo">Consolas, periféricos y hardware con <strong>descuento Level-Up</strong> para correos DUOC.</p>
+        <div class="acciones">
+          <a class="btn primario" href="productos.html">Ver catálogo</a>
+          <a class="btn secundario" href="blogs.html">Novedades</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="destacados">
+      <h2 class="seccion-titulo">Destacados</h2>
+      <div id="gridDestacados" class="grid tarjetas"></div>
+    </section>
+
+    <section class="beneficios">
+      <article>
+        <h3>Gamificación</h3>
+        <p>Ganá <strong>puntos LevelUp</strong> por referidos y compras. ¡Canjealos por descuentos!</p>
+      </article>
+      <article>
+        <h3>Soporte técnico</h3>
+        <p>¿Problemas con tu equipo? <a class="whatsapp" href="https://wa.me/56911111111" target="_blank">Escribinos por WhatsApp</a>.</p>
+      </article>
+      <article>
+        <h3>Eventos</h3>
+        <p>Sumate a torneos y meetups en todo Chile. Pronto: mapa de eventos interactivo.</p>
+      </article>
+    </section>
+
+  </main>
+  <footer class="pie">
+    <p>© 2025 Level-Up Gamer — Chile</p>
+    <p class="pie-links">
+      <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://x.com" target="_blank" rel="noopener">X</a> ·
+      <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+    </p>
+  </footer>
+
+  <!-- Panel Mi Cuenta -->
+  <aside id="panelCuenta" class="panel-cuenta" aria-hidden="true">
+    <div class="panel-cuenta__cab">
+      <h3>Mi cuenta</h3>
+      <button id="btnCerrarCuenta" class="panel-cuenta__cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="panel-cuenta__contenido">
+      <div class="panel-cuenta__avatar">
+        <img src="../img/imgPerfil.png" alt="Foto de perfil">
+      </div>
+
+      <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
+      <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
+      <a class="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
+
+      <div class="panel-cuenta__bloque">
+        <label><strong>Código de referido</strong></label>
+        <div class="panel-cuenta__ref">
+          <input id="cuentaCodigoReferido" readonly>
+          <button id="btnCopiarCodigo" class="btn secundario" type="button">Copiar</button>
+        </div>
+        <small class="pista">Comparte este código. Si alguien se registra con él, ganás puntos.</small>
+      </div>
+
+      <div class="panel-cuenta__bloque">
+        <p><strong>Puntos LevelUp:</strong> <span id="cuentaPuntos">0</span></p>
+        <p><strong>Nivel:</strong> <span id="cuentaNivel">Bronce</span></p>
+        <small class="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+      </div>
+
+      <div class="panel-cuenta__acciones">
+        <a class="btn secundario" href="misCompras.html">Mis compras</a>
+        <button id="btnSalirCuenta" class="btn">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+<!-- Cortina del panel -->
+<div id="cortinaCuenta" class="cortina" hidden></div>
+
+</body>
+</html>

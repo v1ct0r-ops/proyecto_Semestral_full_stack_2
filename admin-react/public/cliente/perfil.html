@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../img/LOGO.png" type="image/png">
+  <title>Level-Up Gamer | Perfil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/css/estilos.css" />
+  <script type="module" src="/src/site/app.js"></script>
+</head>
+<body>
+  <header class="encabezado">
+    <a class="logo" href="index.html">
+      <img src="../img/LOGO.png" alt="LLogo de la Pagina" class="logoBase">
+      <!-- <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span> -->
+    </a>
+
+    <!-- Boton version movil del NAV -->
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
+      <span class="icono-menu" aria-hidden="true">☰</span>
+      <span class="icono-cerrar" aria-hidden="true">✕</span>
+    </button>
+
+    <!-- NAV de escritorio -->
+    <nav class="navegacion">
+      <a href="index.html">Inicio</a>
+      <a href="productos.html">Productos</a>
+      <a href="blogs.html">Blogs</a>
+      <a href="nosotros.html">Nosotros</a>
+      <a href="contacto.html">Contacto</a>
+      <a id="linkAdmin" class="oculto" href="http://localhost:5173/admin">Admin</a>
+      <a id="linkVendedor" class="oculto" href="http://localhost:5173/admin">Vendedor</a>
+      <a id="linkRegistro" href="registro.html">Registro</a>
+      <a id="linkLogin" href="login.html">Ingresar</a>
+      <a class="carrito" href="productos.html#carrito">🛒 <span id="contadorCarrito">0</span></a>
+      
+      <!-- Botón perfil (solo escritorio) -->
+      <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
+        <img src="../img/imgPerfil.png" alt="" loading="lazy">
+      </button>
+    </nav>
+  </header>
+
+  <!-- Panel lateral -->
+  <aside id="menuLateral" class="menu-lateral" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="menu-cabecera">
+      <a class="logo" href="index.html">
+        <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span>
+      </a>
+    </div>
+    <!-- Replica la lista del NAV -->
+    <nav id="menuLista" class="menu-lista"></nav>
+  </aside>
+  <div id="cortina" class="cortina" hidden></div>
+
+  <main class="principal">
+    <section class="formulario-contenedor">
+      <h1>Mi perfil</h1>
+      <form id="formPerfil" novalidate class="formulario">
+
+        <div class="fila">
+          <label for="p_run">RUN</label>
+          <input id="p_run" disabled>
+          <small class="pista">No editable</small>
+        </div>
+
+        <div class="fila">
+          <label for="p_nombres">Nombres</label>
+          <input id="p_nombres" maxlength="50" required>
+          <div class="error" id="errPNombres"></div>
+        </div>
+
+        <div class="fila">
+          <label for="p_apellidos">Apellidos</label>
+          <input id="p_apellidos" maxlength="100" required>
+          <div class="error" id="errPApellidos"></div>
+        </div>
+
+        <div class="fila">
+          <label for="p_correo">Correo</label>
+          <input id="p_correo" type="email" maxlength="100" required placeholder="usuario@duoc.cl / @gmail.com">
+          <small class="pista">Correos permitidos: @duoc.cl, @profesor.duoc.cl, @gmail.com</small>
+          <div class="error" id="errPCorreo"></div>
+        </div>
+
+        <div class="fila">
+          <label for="p_fecha">Fecha de Nacimiento</label>
+          <input id="p_fecha" type="date" required>
+          <div class="error" id="errPFecha"></div>
+        </div>
+
+        <div class="fila">
+          <label for="region">Región</label>
+          <select id="region" required></select>
+          <div class="error" id="errPRegion"></div>
+        </div>
+
+        <div class="fila">
+          <label for="comuna">Comuna</label>
+          <select id="comuna" required></select>
+          <div class="error" id="errPComuna"></div>
+        </div>
+
+        <div class="fila">
+          <label for="p_direccion">Dirección</label>
+          <input id="p_direccion" maxlength="300" required>
+          <div class="error" id="errPDireccion"></div>
+        </div>
+
+        <div class="fila dos">
+          <button class="btn" type="button" id="btnCambiarPass">Cambiar contraseña</button>
+          <button class="btn primario" type="submit" id="btnGuardarPerfil">Guardar cambios</button>
+        </div>
+
+        <p id="msgPerfil" class="exito"></p>
+      </form>
+    </section>
+  </main>
+  <footer class="pie">
+    <p>© 2025 Level-Up Gamer — Chile</p>
+    <p class="pie-links">
+      <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://x.com" target="_blank" rel="noopener">X</a> ·
+      <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+    </p>
+  </footer>
+
+  <!-- Modal cambio de contraseña -->
+  <dialog id="dlgPass">
+    <form id="formPass" method="dialog" class="formulario" style="min-width:320px">
+      <h3>Cambiar contraseña</h3>
+
+      <div class="fila">
+        <label for="passActual">Contraseña actual</label>
+        <input id="passActual" type="password" autocomplete="current-password" required>
+        <div class="error" id="errPassActual"></div>
+      </div>
+
+      <div class="fila">
+        <label for="passNueva">Nueva contraseña</label>
+        <input id="passNueva" type="password" minlength="4" maxlength="10" required>
+        <div class="error" id="errPassNueva"></div>
+      </div>
+
+      <div class="fila">
+        <label for="passNueva2">Confirmar nueva contraseña</label>
+        <input id="passNueva2" type="password" minlength="4" maxlength="10" required>
+        <div class="error" id="errPassNueva2"></div>
+      </div>
+
+      <div class="fila dos">
+        <button class="btn" value="cancel" type="button" id="btnCancelarPass">Cancelar</button>
+        <button class="btn primario" type="submit">Guardar</button>
+      </div>
+
+      <p id="msgPass" class="exito"></p>
+    </form>
+  </dialog>
+
+  <!-- Panel Mi Cuenta (desktop = derecha, móvil = izquierda) -->
+  <aside id="panelCuenta" class="panel-cuenta" aria-hidden="true">
+    <div class="panel-cuenta__cab">
+      <h3>Mi cuenta</h3>
+      <button id="btnCerrarCuenta" class="panel-cuenta__cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="panel-cuenta__contenido">
+      <div class="panel-cuenta__avatar">
+        <img src="../img/imgPerfil.png" alt="Foto de perfil">
+      </div>
+
+      <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
+      <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
+      <a class="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
+
+      <div class="panel-cuenta__bloque">
+        <label><strong>Código de referido</strong></label>
+        <div class="panel-cuenta__ref">
+          <input id="cuentaCodigoReferido" readonly>
+          <button id="btnCopiarCodigo" class="btn secundario" type="button">Copiar</button>
+        </div>
+        <small class="pista">Comparte este código. Si alguien se registra con él, ganás puntos.</small>
+      </div>
+
+      <div class="panel-cuenta__bloque">
+        <p><strong>Puntos LevelUp:</strong> <span id="cuentaPuntos">0</span></p>
+        <p><strong>Nivel:</strong> <span id="cuentaNivel">Bronce</span></p>
+        <small class="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+      </div>
+
+      <div class="panel-cuenta__acciones">
+        <a class="btn secundario" href="misCompras.html">Mis compras</a>
+        <button id="btnSalirCuenta" class="btn">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+<!-- Cortina del panel -->
+<div id="cortinaCuenta" class="cortina" hidden></div>
+
+</body>
+</html>
+  

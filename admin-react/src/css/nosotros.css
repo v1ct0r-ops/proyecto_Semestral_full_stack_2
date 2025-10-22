@@ -1,0 +1,140 @@
+/* --- Contenedor general para limitar el ancho del main --- */
+.contenedor-nosotros {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    background: transparent;
+}
+/* --- DESARROLLADORES --- */
+.desarrolladores {
+    background: #181818;
+    padding: 1.5rem;
+    border-radius: 12px;
+    color: #D3D3D3;
+    margin-top: 2rem;
+    box-shadow: 0 2px 8px rgba(30,144,255,0.08);
+}
+.desarrolladores h2 {
+    font-family: 'Orbitron', Arial, sans-serif;
+    color: #39FF14;
+}
+.desarrolladores ul {
+    list-style: disc inside;
+    margin-bottom: 1rem;
+}
+/* --- BASE: Inspirado en estilos de index y requisitos del caso --- */
+
+body {
+    background: #000;
+    color: #fff;
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.header-nosotros {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #111;
+    padding: 1rem 2rem;
+}
+.logo {
+    height: 68px;
+}
+.nav-list {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+}
+.nav-list a {
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Orbitron', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+.nav-list a.active,
+.nav-list a:hover {
+    color: #1E90FF;
+}
+
+.main-nosotros {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: rgba(20,20,20,0.95);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(30,144,255,0.08);
+}
+.intro h1 {
+    font-family: 'Orbitron', Arial, sans-serif;
+    color: #39FF14;
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+}
+.intro p {
+    color: #D3D3D3;
+    font-size: 1.1rem;
+}
+.mision-vision {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+.mision, .vision {
+    flex: 1 1 300px;
+    background: #181818;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(57,255,20,0.08);
+}
+    .mision h2, .vision h2, .valores h2, .impacto h2 {
+        font-family: 'Orbitron', Arial, sans-serif;
+        color: #fff;
+        margin-top: 0;
+}
+.valores ul {
+    color: #D3D3D3;
+    padding-left: 1.2rem;
+    margin-bottom: 2rem;
+}
+.valores li {
+    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+}
+.impacto {
+    background: #181818;
+    padding: 1.5rem;
+    border-radius: 12px;
+    color: #D3D3D3;
+    box-shadow: 0 2px 8px rgba(30,144,255,0.08);
+}
+.footer-nosotros {
+    text-align: center;
+    padding: 1.2rem 0;
+    background: #111;
+    color: #D3D3D3;
+    font-size: 0.95rem;
+    margin-top: 2rem;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 700px) {
+    .header-nosotros {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    .main-nosotros {
+        padding: 1rem;
+    }
+    .mision-vision {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}

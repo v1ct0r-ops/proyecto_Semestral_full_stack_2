@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../img/LOGO.png" type="image/png">
+  <title>Mis Compras | Level-Up Gamer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/css/estilos.css" />
+  <script type="module" src="/src/site/app.js"></script>
+</head>
+<body>
+  <header class="encabezado">
+    <a class="logo" href="index.html">
+      <img src="../img/LOGO.png" alt="LLogo de la Pagina" class="logoBase">
+      <!-- <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span> -->
+    </a>
+
+    <!-- Boton version movil del NAV -->
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="menuLateral">
+      <span class="icono-menu" aria-hidden="true">☰</span>
+      <span class="icono-cerrar" aria-hidden="true">✕</span>
+    </button>
+
+    <!-- NAV de escritorio -->
+    <nav class="navegacion">
+      <a href="index.html">Inicio</a>
+      <a href="productos.html">Productos</a>
+      <a href="blogs.html">Blogs</a>
+      <a href="nosotros.html">Nosotros</a>
+      <a href="contacto.html">Contacto</a>
+      <a id="linkAdmin" class="oculto" href="http://localhost:5173/admin">Admin</a>
+      <a id="linkVendedor" class="oculto" href="http://localhost:5173/admin">Vendedor</a>
+      <a id="linkRegistro" href="registro.html">Registro</a>
+      <a id="linkLogin" href="login.html">Ingresar</a>
+      <a class="carrito" href="productos.html#carrito">🛒 <span id="contadorCarrito">0</span></a>
+      
+      <!-- Botón perfil (solo escritorio) -->
+      <button id="btnPerfilDesk" class="perfil-desk oculto" aria-label="Mi cuenta">
+        <img src="../img/imgPerfil.png" alt="" loading="lazy">
+      </button>
+    </nav>
+  </header>
+
+  <!-- Panel lateral -->
+  <aside id="menuLateral" class="menu-lateral" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="menu-cabecera">
+      <a class="logo" href="index.html">
+        <span class="marca">LEVEL<span class="up">UP</span> <span class="gamer">GAMER</span></span>
+      </a>
+    </div>
+    <!-- Replica la lista del NAV -->
+    <nav id="menuLista" class="menu-lista"></nav>
+  </aside>
+  <div id="cortina" class="cortina" hidden></div>
+
+  <main class="principal">
+    <h2>Mis compras</h2>
+    <div id="listaCompras"></div>
+  </main>
+
+  <footer class="pie">
+    <p>© 2025 Level-Up Gamer — Chile</p>
+    <p class="pie-links">
+      <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://x.com" target="_blank" rel="noopener">X</a> ·
+      <a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a>
+    </p>
+  </footer>
+
+  <dialog id="dlgCancelarPedido" class="modal">
+    <form method="dialog" class="formulario" style="min-width:320px;max-width:480px">
+      <h3>Cancelar pedido</h3>
+      <p>¿Estás seguro de cancelar este pedido? Esta acción no se puede deshacer.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="btnConfirmarCancelacion" class="btn peligro" value="ok">Estoy seguro</button>
+        <button id="btnCerrarCancelacion" class="btn secundario" value="cancel">Cancelar</button>
+      </div>
+      <input type="hidden" id="cancelarPedidoId">
+    </form>
+  </dialog>
+
+  <dialog id="dlgBoleta" class="modal">
+    <form method="dialog" class="formulario" style="min-width:320px;max-width:540px">
+      <h3 style="display:flex;align-items:center;gap:8px">
+        📄 Generar boleta
+      </h3>
+      <div id="boletaResumen" class="boleta-resumen" style="margin-top:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="btnGenerarPDF" class="btn primario" value="ok">Generar PDF</button>
+        <button id="btnCerrarBoleta" class="btn secundario" value="cancel">Cerrar</button>
+      </div>
+      <input type="hidden" id="boletaPedidoId">
+    </form>
+  </dialog>
+
+
+
+  
+
+  <!-- Panel Mi Cuenta (desktop = derecha, móvil = izquierda) -->
+  <aside id="panelCuenta" class="panel-cuenta" aria-hidden="true">
+    <div class="panel-cuenta__cab">
+      <h3>Mi cuenta</h3>
+      <button id="btnCerrarCuenta" class="panel-cuenta__cerrar" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="panel-cuenta__contenido">
+      <div class="panel-cuenta__avatar">
+        <img src="../img/imgPerfil.png" alt="Foto de perfil">
+      </div>
+
+      <p><strong>Nombre:</strong> <span id="cuentaNombre"></span></p>
+      <p><strong>Correo:</strong> <span id="cuentaCorreo"></span></p>
+      <a class="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
+
+      <div class="panel-cuenta__bloque">
+        <label><strong>Código de referido</strong></label>
+        <div class="panel-cuenta__ref">
+          <input id="cuentaCodigoReferido" readonly>
+          <button id="btnCopiarCodigo" class="btn secundario" type="button">Copiar</button>
+        </div>
+        <small class="pista">Comparte este código. Si alguien se registra con él, ganás puntos.</small>
+      </div>
+
+      <div class="panel-cuenta__bloque">
+        <p><strong>Puntos LevelUp:</strong> <span id="cuentaPuntos">0</span></p>
+        <p><strong>Nivel:</strong> <span id="cuentaNivel">Bronce</span></p>
+        <small class="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+      </div>
+
+      <div class="panel-cuenta__acciones">
+        <a class="btn secundario" href="misCompras.html">Mis compras</a>
+        <button id="btnSalirCuenta" class="btn">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+<!-- Cortina del panel -->
+<div id="cortinaCuenta" class="cortina" hidden></div>
+
+</body>
+</html>
