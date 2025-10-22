@@ -260,12 +260,8 @@ export default function ProductosPanel() {
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
-<<<<<<< HEAD
-          <a href="/admin/boleta" >Boletas</a>
-=======
           <a href="/admin/boleta">Boletas</a>
           <a href="/admin/reportes">Reportes</a>
->>>>>>> origin/feature/admin-react-migracion-completa
         </aside>
 
         {/* Panel principal */}

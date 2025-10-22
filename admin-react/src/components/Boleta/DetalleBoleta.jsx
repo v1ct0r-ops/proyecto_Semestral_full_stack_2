@@ -268,8 +268,102 @@ const DetalleBoleta = () => {
   const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim();
   const correo = comprador.correo || comprador.email || "—";
 
+  // ===== Cálculos de descuentos (mismo criterio que cliente) =====
+  const subtotalNum = items.reduce((s, it) => s + (Number(it.precio || 0) * Number(it.cantidad || 1)), 0);
+
+  const VALOR_PUNTO = 10;
+  const TOPE_DESC_POR_PUNTOS = 0.20;
+
+  let puntosComprador = 0;
+  try {
+    const usuarios = Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : [];
+    const u = usuarios.find((x) => (x.correo || "").toLowerCase() === (correo || "").toLowerCase());
+    puntosComprador = u ? Number(u.puntosLevelUp || 0) : 0;
+  } catch {
+    puntosComprador = 0;
+  }
+
+  const aplicaDuoc = (correo || "").toLowerCase().endsWith("@duoc.cl");
+  const descuentoDuocNum = aplicaDuoc ? Math.round(subtotalNum * 0.20) : 0;
+  const valorPuntosDisponibles = Math.max(0, puntosComprador * VALOR_PUNTO);
+  const maxPorPuntos = Math.round(subtotalNum * TOPE_DESC_POR_PUNTOS);
+  const descuentoPuntosNum = Math.min(valorPuntosDisponibles, maxPorPuntos);
+
+  const totalNumComputed = Math.max(0, subtotalNum - descuentoDuocNum - descuentoPuntosNum);
+  // Preferir el total guardado en la boleta (si existe), sino usar cálculo en tiempo real
+  const totalNum = typeof boleta?.totalNumerico === "number" ? boleta.totalNumerico : totalNumComputed;
+
   const imprimirBoleta = () => {
-    window.print();
+    // Reutilizar exactamente la estructura HTML que usa el cliente en misCompras.html (mismo layout).
+    // Para mantener la paridad visual usamos la misma estructura y estilos, pero el TOTAL será el
+    // totalNum (si la boleta lo tiene) o el cálculo en tiempo real.
+    const rows = items.map(it => `
+      <tr>
+        <td>${it.nombre || '-' }<br><small>${it.codigo || ''}</small></td>
+        <td style="text-align:right">${CLP(Number(it.precio || 0))}</td>
+        <td style="text-align:center">x${Number(it.cantidad || 1)}</td>
+        <td style="text-align:right">${CLP(Number(it.precio || 0) * Number(it.cantidad || 1))}</td>
+      </tr>
+    `).join('');
+
+    const totalToShow = (typeof boleta?.totalNumerico === 'number') ? boleta.totalNumerico : totalNumComputed;
+
+    const fecha = boleta?.fecha ? new Date(boleta.fecha).toLocaleString('es-CL') : new Date().toLocaleString('es-CL');
+
+    const html = `<!doctype html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <title>Boleta ${boleta?.numero || ''}</title>
+        <style>
+          body{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; padding:20px; }
+          h1{ margin:0 0 6px 0; font-size:20px; }
+          table{ width:100%; border-collapse:collapse; }
+          th, td{ padding:6px 0; border-bottom:1px solid #ddd; font-size:14px; }
+          tfoot td{ border-bottom:0; }
+          .enc{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+          .enc .icon{ font-size:28px; }
+          .small{ color:#555; font-size:12px; }
+        </style>
+      </head>
+      <body>
+        <div class="enc">
+          <div>
+            <h1>Level-Up Gamer</h1>
+            <div class="small">Boleta electrónica</div>
+            <div class="small">Pedido: ${boleta?.pedidoId || ''}</div>
+            <div class="small">Fecha: ${fecha}</div>
+            <div class="small">Cliente: ${boleta?.cliente || nombreCompleto || ''} — ${correo || ''}</div>
+          </div>
+          <div class="icon">📄</div>
+        </div>
+        <hr>
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left">Producto</th>
+              <th style="text-align:right">Precio</th>
+              <th style="text-align:center">Cant</th>
+              <th style="text-align:right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="text-align:right"><strong>Total</strong></td>
+              <td style="text-align:right"><strong>${CLP(totalToShow)}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+        <script>window.onload = () => { window.print(); };</script>
+      </body>
+      </html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) { alert('Bloqueado por el navegador. Permití ventanas emergentes para generar el PDF.'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
   };
 
   return (
@@ -425,4 +519,4 @@ const DetalleBoleta = () => {
   );
 };
 
-export default DetalleBoleta;
+export default DetalleBoleta

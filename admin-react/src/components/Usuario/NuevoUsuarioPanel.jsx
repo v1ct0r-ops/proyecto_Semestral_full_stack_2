@@ -260,10 +260,7 @@ export default function NuevoUsuarioPanel() {
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
-<<<<<<< HEAD
-=======
           <a href="/admin/reportes">Reportes</a>
->>>>>>> origin/feature/admin-react-migracion-completa
         </aside>
 
         <div className="panel">

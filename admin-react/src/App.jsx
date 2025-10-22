@@ -18,7 +18,7 @@ import Boleta from "./components/Boleta/Boleta.jsx";
 import DetalleBoleta from "./components/Boleta/DetalleBoleta.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import BoletasPanel from "./components/Boleta/Boletas.jsx";
-import DetalleBoleta from "./components/Boleta/DetalleBoleta.jsx";
+
 
 function NotFound() {
   return (
