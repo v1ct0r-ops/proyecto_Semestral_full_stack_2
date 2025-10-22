@@ -1,7 +1,7 @@
 // src/components/pedido/PedidosPanel.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { obtener, usuarioActual } from "../../utils/storage";
+import { obtener, usuarioActual, guardar } from "../../utils/storage";
 
 /* ================= Helpers ================= */
 const CLP = (n) =>
@@ -236,7 +236,7 @@ function AccountPanel({ user, open, onClose }) {
 }
 
 /* ============== Tarjeta Pedido ============== */
-function PedidoCard({ pedido, usuarios, onVerDetalle }) {
+function PedidoCard({ pedido, usuarios, onVerDetalle, onVerBoleta }) {
   // 👇 AHORA incluimos 'pedido.comprador' como primera opción
   const compradorDirect =
     pedido.comprador || // <- clave en tus datos
@@ -318,6 +318,14 @@ function PedidoCard({ pedido, usuarios, onVerDetalle }) {
           >
             Ver detalle
           </button>
+          {/* Botón Ver boleta */}
+          <button
+            className="btn primario"
+            onClick={() => onVerBoleta && onVerBoleta(pedido)}
+            style={{ cursor: "pointer" }}
+          >
+            Ver boleta
+          </button>
         </div>
       </div>
     </article>
@@ -328,6 +336,35 @@ function PedidoCard({ pedido, usuarios, onVerDetalle }) {
 export default function PedidosPanel() {
   const navigate = useNavigate();
   const { user, pedidos, usuarios } = useSessionData();
+
+  // Generar/recuperar boleta y navegar al detalle
+  const handleVerBoleta = (pedido) => {
+    if (!pedido) return;
+    const boletasExistentes = Array.isArray(obtener("boletas", [])) ? obtener("boletas", []) : [];
+    const boletaExistente = boletasExistentes.find(b => b.pedidoId === pedido.id);
+    if (boletaExistente) {
+      navigate(`/admin/boleta/${encodeURIComponent(boletaExistente.numero)}`);
+      return;
+    }
+
+    const comprador = pedido?.comprador || pedido?.usuario || pedido?.cliente || {};
+    const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim() || "Cliente";
+    const timestamp = Date.now();
+    const numeroBoleta = `BOL-${String(timestamp).slice(-6)}`;
+    const nuevaBoleta = {
+      numero: numeroBoleta,
+      fecha: new Date().toISOString().split('T')[0],
+      cliente: nombreCompleto,
+      pedidoId: pedido.id,
+      total: CLP(pedido.total || 0),
+      totalNumerico: pedido.total || 0,
+      fechaCreacion: new Date().toISOString()
+    };
+
+    const todas = [...boletasExistentes, nuevaBoleta];
+    guardar("boletas", todas);
+    navigate(`/admin/boleta/${encodeURIComponent(numeroBoleta)}`);
+  };
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -397,11 +434,12 @@ export default function PedidosPanel() {
                   const raw = p.id || p.codigo || p.timestamp;
                   const pid = encodeURIComponent(String(raw).replace(/^PED-?/i, ""));
                   return (
-                    <PedidoCard
+            <PedidoCard
                       key={raw}
                       pedido={p}
                       usuarios={usuarios}
-                      onVerDetalle={() => navigate(`/admin/pedidos/${pid}`)}
+              onVerDetalle={() => navigate(`/admin/pedidos/${pid}`)}
+              onVerBoleta={(pedido) => handleVerBoleta(pedido)}
                     />
                   );
                 })
