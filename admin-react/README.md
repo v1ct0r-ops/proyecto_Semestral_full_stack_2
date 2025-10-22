@@ -1,20 +1,23 @@
+
 # Proyecto Semestral — Level-Up Gamer
 
-Resumen
--------
-Repositorio con dos partes principales:
+## Descripción
+Panel de administración para la tienda web Level-Up Gamer. Permite gestionar productos, usuarios, pedidos, boletas y solicitudes de contacto desde una SPA desarrollada en React y Vite. El panel está orientado a administradores y vendedores, facilitando la gestión interna de la tienda, la visualización de reportes y la administración de boletas generadas automáticamente al despachar pedidos.
 
-- `admin/` — conjunto de páginas estáticas (HTML) del admin clásico (no React).
-- `admin-react/` — SPA de administración en React + Vite (panel de administración, boletas, pedidos, productos, usuarios, etc.).
-- `public/cliente/` (dentro de `admin-react/public/cliente/`) — versiones estáticas del sitio cliente (productos, misCompras.html, etc.) que comparten estilos y plantillas.
+## Este repositorio contiene:
+- `admin-react/` — SPA de administración en React + Vite (panel de administración, boletas, pedidos, productos, usuarios, reportes, etc.)
+- `public/cliente/` — versiones estáticas del sitio cliente (productos, misCompras.html, etc.) que comparten estilos y plantillas
 
-Objetivo
+El objetivo es centralizar la gestión de la tienda y mantener la coherencia visual y funcional entre el panel de administración y la experiencia del cliente.
+
+
+## Objetivo
 --------
 Aplicación de e-commerce didáctica donde:
 - Los clientes pueden navegar, añadir al carrito, pagar y ver sus compras ("Mis compras").
 - El admin gestiona productos, pedidos, usuarios y boletas a través del panel React.
 
-Estructura relevante
+## Estructura relevante
 --------------------
 - `admin-react/` — aplicación React (Vite)
   - `src/` — código fuente React
@@ -24,7 +27,7 @@ Estructura relevante
   - `public/cliente/` — páginas cliente estáticas (ej. `misCompras.html`) con la plantilla de boleta/modales.
   - `package.json` — scripts (dev, build, preview).
 
-Principales comportamientos (boletas)
+## Principales comportamientos (boletas)
 -----------------------------------
 - Generación manual: desde el panel de Pedidos (botón "Generar boleta") se crea una boleta en `localStorage` (clave: `boletas`) y se navega a su detalle.
 - Impresión: la vista de detalle de boleta abre una ventana con una plantilla HTML (idéntica a la del cliente) y llama a `window.print()` para generar PDF/print.
@@ -79,10 +82,30 @@ Requisitos y comportamientos a considerar
 - Compatibilidad del modal `<dialog>`: el cliente usa `<dialog>` para el modal de boleta (`dlgBoleta`), que no está soportado en todos los navegadores históricos. El código intenta `dlg.showModal()` y como fallback establece `open` si ese método falla.
 
 
-Notas de mantenimiento
+## Tecnologías Utilizadas
 ---------------------
-- La lógica de descuentos está implementada en varios lugares (cliente `src/site/app.js`, admin `DetalleBoleta.jsx`, `DetallePedidoPanel.jsx` al crear boletas). Si vas a cambiar las reglas (por ejemplo, porcentaje DUOC o valor del punto), considera extraer esa lógica a una función utilitaria compartida para evitar inconsistencias.
-- Hay un helper central en `src/utils/storage.js` para leer/escribir `localStorage` y centralizar el acceso a claves.
+- React 19 (SPA de administración)
+- Vite (dev server y build)
+- JavaScript (ES6+)
+- HTML5 y CSS3 (componentes y páginas estáticas)
+- LocalStorage (persistencia en navegador)
+- @testing-library/react y @testing-library/jest-dom (tests de componentes)
+- Jasmine y Karma (suite de testing, integración y cobertura)
+- Node.js y npm (gestión de dependencias y scripts)
+
+## Requisitos previos
+------------------
+- Node.js v16 o superior
+- npm (incluido con Node.js)
+- Navegador web moderno (Chrome, Firefox, Edge, etc.)
+- (Opcional) Visual Studio Code para edición
+- (Opcional) Extensión Live Server para desarrollo rápido de las páginas estáticas
+
+## Para desarrollo y testing:
+- Ejecutar `npm install` en `admin-react/` para instalar dependencias
+- Usar `npm run dev` para entorno de desarrollo (Vite)
+- Usar `npm run test:karma` para correr los tests unitarios y de integración
+
 
 
 \---admin-react
