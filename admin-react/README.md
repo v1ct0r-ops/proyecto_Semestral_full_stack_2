@@ -85,4 +85,123 @@ Notas de mantenimiento
 - Hay un helper central en `src/utils/storage.js` para leer/escribir `localStorage` y centralizar el acceso a claves.
 
 
-
+\---admin-react
+    |   .gitignore
+    |   eslint.config.js
+    |   index.html
+    |   karma.conf.cjs
+    |   package-lock.json
+    |   package.json
+    |   README.md
+    |   vite.config.js
+    |   
+    +---docs
+    |       Documento de Cobertura de Testing - EP2.md
+    |       
+    +---public
+    |   |   vite.svg
+    |   |   
+    |   +---cliente
+    |   |       blog-detalle-1.html
+    |   |       blog-detalle-2.html
+    |   |       blogs.html
+    |   |       contacto.html
+    |   |       index.html
+    |   |       login.html
+    |   |       misCompras.html
+    |   |       nosotros.html
+    |   |       perfil.html
+    |   |       producto.html
+    |   |       productos.html
+    |   |       README.md
+    |   |       registro.html
+    |   |       
+    |   \---img
+    |           8-verthing-k_pBB5wJtaU-unsplash.jpg
+    |           ella-don-fK5Oomnc-Wk-unsplash (1).jpg
+    |           ella-don-K4kfIEhj4GM-unsplash.jpg
+    |           imgPerfil.png
+    |           LOGO.png
+    |           placeholder.jpg
+    |           samsung-memory-XB4F9V5UleA-unsplash.jpg
+    |           
+    +---src
+    |   |   App.css
+    |   |   App.jsx
+    |   |   index.css
+    |   |   main.jsx
+    |   |   
+    |   +---assets
+    |   |       react.svg
+    |   |       
+    |   +---components
+    |   |   |   ProtectedRoute.jsx
+    |   |   |   
+    |   |   +---Boleta
+    |   |   |       Boleta.jsx
+    |   |   |       DetalleBoleta.jsx
+    |   |   |       
+    |   |   +---Dashboard
+    |   |   |       AdminPanel.jsx
+    |   |   |       
+    |   |   +---Pedidos
+    |   |   |       DetallePedidoPanel.jsx
+    |   |   |       PedidosPanel.jsx
+    |   |   |       
+    |   |   +---Productos
+    |   |   |       EditarProductoPanel.jsx
+    |   |   |       NuevoProductoPanel.jsx
+    |   |   |       ProductosPanel.jsx
+    |   |   |       ProductosPocoStockPanel.jsx
+    |   |   |       ReportesProductosPanel.jsx
+    |   |   |       
+    |   |   +---Reportes
+    |   |   |       ReportesPanel.jsx
+    |   |   |       
+    |   |   +---Solicitud
+    |   |   |       DetalleSolicitudPanel.jsx
+    |   |   |       SolicitudesPanel.jsx
+    |   |   |       
+    |   |   \---Usuario
+    |   |           EditarUsuarioPanel.jsx
+    |   |           HistorialUsuarioPanel.jsx
+    |   |           NuevoUsuarioPanel.jsx
+    |   |           UsuariosPanel.jsx
+    |   |           
+    |   +---css
+    |   |       blogs.css
+    |   |       contactos.css
+    |   |       estilos.css
+    |   |       nosotros.css
+    |   |       
+    |   +---site
+    |   |       app.js
+    |   |       contacto.js
+    |   |       datos.js
+    |   |       solicitud.js
+    |   |       
+    |   \---utils
+    |           storage.js
+    |           
+    \---test
+        |   contacto.spec.js
+        |   DetallePedidoPanel.spec.js
+        |   DetallePedidoPanel.spec.jsx
+        |   EditarProductoPanel.spec.js
+        |   EditarProductoPanel.spec.jsx
+        |   NuevoProductoPanel.spec.js
+        |   NuevoProductoPanel.spec.jsx
+        |   panel-solicitudes.spec.js
+        |   panel-solicitudes.spec.jsx
+        |   PedidosPanel.spec.js
+        |   PedidosPanel.spec.jsx
+        |   ProductosPanelSmoke.spec.js
+        |   ProductosPanelSmoke.spec.jsx
+        |   ProductosPocoStockPanel.spec.js
+        |   ProductosPocoStockPanel.spec.jsx
+        |   ReportesPanel.spec.js
+        |   ReportesPanel.spec.jsx
+        |   sanity.spec.js
+        |   
+        \---stubs
+                storage.stub.js
