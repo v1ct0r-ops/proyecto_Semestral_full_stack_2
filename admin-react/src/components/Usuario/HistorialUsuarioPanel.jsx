@@ -1,8 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { obtener, usuarioActual } from "../../utils/storage";
+// src/components/usuarios/HistorialUsuarioPanel.jsx
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { usuariosAPI, pedidosAPI } from "../../services/apiService";
 
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
+// === UI comunes ===
 function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
   return (
     <header className="encabezado">
@@ -10,7 +13,6 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
         <img src="/img/LOGO.png" alt="Logo" className="logoBase" />
       </a>
 
-      {/* Botón menú móvil */}
       <button
         id="btnMenu"
         type="button"
@@ -24,7 +26,6 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
         <span className="icono-cerrar" aria-hidden="true">✕</span>
       </button>
 
-      {/* NAV superior */}
       <nav className="navegacion">
         <a href="/cliente/index.html">Inicio</a>
         <a href="/cliente/productos.html">Productos</a>
@@ -43,6 +44,21 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
 }
 
 function SideMenu({ open, onClose, onOpenAccount }) {
+  const { logout } = useAuth();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await logout();
+      onClose();
+      window.location.href = "/cliente/";
+    } catch (error) {
+      localStorage.clear();
+      onClose();
+      window.location.href = "/cliente/";
+    }
+  };
+
   return (
     <>
       <aside
@@ -55,12 +71,12 @@ function SideMenu({ open, onClose, onOpenAccount }) {
         <div className="menu-cabecera">
           <a className="logo" href="/admin">
             <span className="marca">
-              LEVEL<span className="up">UP</span> <span className="gamer">GAMER</span>
+              LEVEL<span className="up">UP</span>{" "}
+              <span className="gamer">GAMER</span>
             </span>
           </a>
         </div>
 
-        {/* SOLO: Mi cuenta, Inicio, Productos y Salir */}
         <nav id="menuLista" className="menu-lista" data-clonado="1">
           <a
             href="#"
@@ -75,32 +91,31 @@ function SideMenu({ open, onClose, onOpenAccount }) {
             Mi cuenta
           </a>
 
-          <a href="/cliente/index.html" onClick={onClose}>Inicio</a>
-          <a href="/cliente/productos.html" onClick={onClose}>Productos</a>
+          <a href="/cliente/index.html" onClick={onClose}>
+            Inicio
+          </a>
+          <a href="/cliente/productos.html" onClick={onClose}>
+            Productos
+          </a>
 
           <a
             href="/cliente/index.html"
             id="linkSalirMov"
             data-bind="1"
-            onClick={(e) => {
-              e.preventDefault();
-              localStorage.removeItem("sesion");
-              onClose();
-              window.location.href = "../index.html";
-            }}
+            onClick={handleLogout}
           >
             Salir
           </a>
         </nav>
       </aside>
 
-      {/* Cortina */}
       <div id="cortina" className="cortina" hidden={!open} onClick={onClose} />
     </>
   );
 }
 
 function AccountPanel({ user, open, onClose }) {
+  const { logout } = useAuth();
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
   const codigo = user?.codigoReferido || "";
@@ -112,7 +127,16 @@ function AccountPanel({ user, open, onClose }) {
     } catch {}
   };
 
-  // Si está cerrado, no se renderiza
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      localStorage.clear();
+    } finally {
+      window.location.href = "/cliente/";
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -142,34 +166,56 @@ function AccountPanel({ user, open, onClose }) {
             <img src="/img/imgPerfil.png" alt="Foto de perfil" />
           </div>
 
-          <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
-          <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
+          <p>
+            <strong>Nombre:</strong>{" "}
+            {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}
+          </p>
+          <p>
+            <strong>Correo:</strong> {user?.correo || user?.email || "—"}
+          </p>
+          <a className="btn secundario" href="/cliente/perfil.html">
+            Editar Perfil
+          </a>
 
           <div className="panel-cuenta__bloque">
-            <label><strong>Código de referido</strong></label>
+            <label>
+              <strong>Código de referido</strong>
+            </label>
             <div className="panel-cuenta__ref">
               <input readOnly value={codigo} />
-              <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
+              <button
+                className="btn secundario"
+                type="button"
+                onClick={copyCode}
+              >
+                Copiar
+              </button>
             </div>
-            <small className="pista">Compartí este código para ganar puntos.</small>
+            <small className="pista">
+              Compartí este código para ganar puntos.
+            </small>
           </div>
 
           <div className="panel-cuenta__bloque">
-            <p><strong>Puntos LevelUp:</strong> <span>{puntos}</span></p>
-            <p><strong>Nivel:</strong> <span>{nivel}</span></p>
-            <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+            <p>
+              <strong>Puntos LevelUp:</strong> <span>{puntos}</span>
+            </p>
+            <p>
+              <strong>Nivel:</strong> <span>{nivel}</span>
+            </p>
+            <small className="pista">
+              Bronce: 0–199 · Plata: 200–499 · Oro: 500+
+            </small>
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
+            <a className="btn secundario" href="/cliente/misCompras.html">
+              Mis compras
+            </a>
             <button
               id="btnSalirCuenta"
               className="btn"
-              onClick={() => {
-                localStorage.removeItem("sesion");
-                window.location.href = "/cliente/index.html";
-              }}
+              onClick={handleLogout}
             >
               Salir
             </button>
@@ -182,18 +228,34 @@ function AccountPanel({ user, open, onClose }) {
   );
 }
 
+// === Helpers de pedidos ===
 function extraerClavesPedido(p) {
+  // nuevo: considerar también p.usuario (relación típica ManyToOne en backend)
+  const u = p?.usuario || {};
   const c = p?.comprador || {};
+
   return {
-    run: p?.runUsuario ?? p?.clienteRun ?? p?.run ?? p?.usuarioRun ?? c.run ?? null,
-    correo: p?.correoUsuario ?? p?.email ?? p?.correo ?? c.correo ?? null,
-    usuarioId: p?.usuarioId ?? p?.userId ?? p?.idUsuario ?? null,
+    run:
+      p?.runUsuario ??
+      p?.clienteRun ??
+      p?.run ??
+      p?.usuarioRun ??
+      u.run ??
+      c.run ??
+      null,
+    correo:
+      p?.correoUsuario ??
+      p?.email ??
+      p?.correo ??
+      u.correo ??
+      c.correo ??
+      null,
+    usuarioId: p?.usuarioId ?? p?.userId ?? p?.idUsuario ?? u.id ?? null,
   };
 }
 
 const norm = (v) => (v ?? "").toString().trim().toLowerCase();
 
-// ¿El pedido pertenece al usuario u?
 function perteneceAPersona(pedido, usuario) {
   const k = extraerClavesPedido(pedido);
   return (
@@ -205,7 +267,11 @@ function perteneceAPersona(pedido, usuario) {
 
 const CLP = (n) =>
   typeof n === "number"
-    ? n.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
+    ? n.toLocaleString("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0,
+      })
     : "—";
 
 function formatearFecha(fechaISO) {
@@ -219,49 +285,67 @@ function formatearFecha(fechaISO) {
   return `${dia}-${mes}-${anio} / ${horas}:${mins}`;
 }
 
-
 export default function HistorialUsuarioPanel({ runParam }) {
-  const [user, setUser] = useState(null);
+  const { user, isAuthenticated } = useAuth();
   const [run, setRun] = useState(runParam || "");
   const [usuarioData, setUsuarioData] = useState(null);
   const [pedidos, setPedidos] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [form, setForm] = useState({
-    run: "",
-    nombres: "",
-    apellidos: "",
-    correo: "",
-    tipoUsuario: "cliente",
-    direccion: "",
-    password: "",
-  });
-  const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
+    if (!isAuthenticated || !user) {
       alert("Acceso restringido.");
-      window.location.href = "/index.html";
+      window.location.href = "/cliente/";
       return;
     }
-    setUser(u);
-    setIsAdmin(u.tipoUsuario === "admin");
 
-    const listaUsuarios = Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : [];
-    const listaPedidos = Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : [];
-    
+    const esAdmin =
+      user.tipo === "ADMIN" ||
+      user.tipo === "admin" ||
+      user.tipoUsuario === "ADMIN" ||
+      user.tipoUsuario === "admin";
 
-    const runFromPath = runParam || (window?.location?.pathname?.split("/")?.pop() ?? "");
+    if (!esAdmin) {
+      alert("Solo administradores pueden ver el historial de usuarios.");
+      window.location.href = "/admin";
+      return;
+    }
+
+    setIsAdmin(esAdmin);
+
+    const runFromPath =
+      runParam || (window?.location?.pathname?.split("/")?.pop() ?? "");
     setRun(runFromPath);
 
-    const uData = listaUsuarios.find((x) => String(x.run) === String(runFromPath));
-    setUsuarioData(uData || null);
+    // Carga los datos del usuario y sus pedidos desde el backend
+    const load = async () => {
+      try {
+        const uData = await usuariosAPI.getById(runFromPath);
+        if (!uData) {
+          setUsuarioData(null);
+          setPedidos([]);
+          return;
+        }
+        setUsuarioData(uData);
 
-    const delUsuario = listaPedidos.filter((p) => perteneceAPersona(p, uData));
-    setPedidos(delUsuario);
-  }, [runParam]);
+        const todosPedidos = await pedidosAPI.getAll();
+        // Filtramos los pedidos que pertenecen al usuario
+        const delUsuario = (Array.isArray(todosPedidos) ? todosPedidos : []).filter(
+          (p) => perteneceAPersona(p, uData)
+        );
+
+        setPedidos(delUsuario);
+      } catch (err) {
+        // Si ocurre un error al cargar historial, dejamos los datos vacíos
+        setUsuarioData(null);
+        setPedidos([]);
+      }
+    };
+
+    load();
+  }, [runParam, isAuthenticated, user]);
 
   if (!user) return null;
 
@@ -275,7 +359,6 @@ export default function HistorialUsuarioPanel({ runParam }) {
       <SideMenu
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        isAdmin={isAdmin}
         onOpenAccount={() => setAccountOpen(true)}
       />
 
@@ -283,7 +366,11 @@ export default function HistorialUsuarioPanel({ runParam }) {
         <aside className="menu-admin">
           <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
-          {isAdmin && <a href="/admin/usuarios" className="activo">Usuarios</a>}
+          {isAdmin && (
+            <a href="/admin/usuarios" className="activo">
+              Usuarios
+            </a>
+          )}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
@@ -299,9 +386,24 @@ export default function HistorialUsuarioPanel({ runParam }) {
               <article className="tarjeta" style={{ marginBottom: 12 }}>
                 <div className="contenido">
                   <h3>Datos</h3>
-                  <p><strong>Nombre:</strong> {`${usuarioData.nombres || ""} ${usuarioData.apellidos || ""}`.trim()}</p>
-                  <p><strong>Correo:</strong> {usuarioData.correo || "—"}</p>
-                  {usuarioData.direccion && <p><strong>Dirección:</strong> {usuarioData.direccion}</p>}
+                  <p>
+                    <strong>Nombre:</strong>{" "}
+                    {`${usuarioData.nombres || ""} ${
+                      usuarioData.apellidos || ""
+                    }`.trim()}
+                  </p>
+                  <p>
+                    <strong>RUN:</strong> {usuarioData.run || "—"}
+                  </p>
+                  <p>
+                    <strong>Correo:</strong>{" "}
+                    {usuarioData.correo || usuarioData.email || "—"}
+                  </p>
+                  {usuarioData.direccion && (
+                    <p>
+                      <strong>Dirección:</strong> {usuarioData.direccion}
+                    </p>
+                  )}
                 </div>
               </article>
 
@@ -318,30 +420,38 @@ export default function HistorialUsuarioPanel({ runParam }) {
                 <tbody>
                   {Array.isArray(pedidos) && pedidos.length > 0 ? (
                     pedidos.map((p) => (
-                      <tr key={p.id || p.codigo || `${p.fecha}-${Math.random()}`}>
+                      <tr
+                        key={
+                          p.id || p.codigo || `${p.fecha || p.creado}-${Math.random()}`
+                        }
+                      >
                         <td>{p.id || p.codigo || "—"}</td>
                         <td>{formatearFecha(p.fecha || p.fechaPedido || p.creado)}</td>
                         <td
-                            style={{
-                                color:
-                                p.estado === "despachado"
-                                    ? "#44aa68ff"
-                                    : p.estado === "cancelado"
-                                    ? "#da4343ff"
-                                    : p.estado === "pendiente"
-                                    ? "#f19a16ff"
-                                    : "inherit",
-                                fontWeight: "bold",
-                            }}
-                            >
-                            {p.estado || "—"}
+                          style={{
+                            color:
+                              p.estado === "despachado"
+                                ? "#44aa68ff"
+                                : p.estado === "cancelado"
+                                ? "#da4343ff"
+                                : p.estado === "pendiente"
+                                ? "#f19a16ff"
+                                : "inherit",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {p.estado || "—"}
                         </td>
                         <td>{CLP(Number(p.total) || 0)}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4}><p className="info" style={{ margin: 0 }}>No hay compras para este usuario.</p></td>
+                      <td colSpan={4}>
+                        <p className="info" style={{ margin: 0 }}>
+                          No hay compras para este usuario.
+                        </p>
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -355,7 +465,11 @@ export default function HistorialUsuarioPanel({ runParam }) {
         <p>© 2025 Level-Up Gamer — Chile</p>
       </footer>
 
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel
+        user={user}
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
     </div>
   );
 }

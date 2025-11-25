@@ -1,0 +1,116 @@
+/* ----- Layout general ----- */
+
+
+/* Hereda variables de estilos.css */
+
+*{box-sizing:border-box}
+
+
+
+
+.panel-contacto {
+  width: 100%;
+  max-width: 480px;
+  margin: 48px auto 80px;
+  padding: 0 16px;
+  text-align: center;
+}
+.titulo-contacto {
+  margin: 24px 0 10px;
+  font-family: 'Orbitron', Arial, sans-serif;
+  color: var(--verde);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.intro-contacto {
+  color: var(--texto-sec);
+  margin-bottom: 24px;
+  font-size: 1.1rem;
+}
+.form-contacto {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  padding: 0 22px 24px;
+  text-align: left;
+  margin: 0 auto;
+  box-shadow: 0 4px 24px rgba(30,144,255,0.10);
+}
+.form-header {
+  background: var(--gris);
+  border-bottom: 1px solid var(--borde);
+  margin: 0 -22px 18px;
+  padding: 14px 22px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  color: var(--azul);
+  font-family: 'Orbitron', Arial, sans-serif;
+  letter-spacing: 1px;
+}
+.campo { margin-bottom: 16px; }
+.campo label {
+  display: block;
+  font-size: .95rem;
+  letter-spacing: .02em;
+  margin-bottom: 6px;
+  color: var(--azul);
+  font-weight: 600;
+}
+input[type="text"],
+input[type="email"],
+textarea {
+  width: 100%;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 12px 14px;
+  outline: none;
+  background: #181818;
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+}
+input:focus,
+textarea:focus {
+  border-color: var(--verde);
+  background: #121212;
+}
+.acciones {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+.btn.primario {
+  background: var(--azul);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Orbitron', Arial, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 12px 32px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.04s;
+  box-shadow: 0 2px 0 var(--azul);
+}
+.btn.primario:hover {
+  background: var(--verde);
+  color: #000;
+}
+.soporte-extra {
+  margin-top: 32px;
+  color: var(--texto-sec);
+  font-size: 1rem;
+}
+.whatsapp-link {
+  color: var(--verde);
+  font-weight: 700;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+.whatsapp-link:hover {
+  color: var(--azul);
+}

@@ -1,5 +1,45 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { obtener, usuarioActual } from "../../utils/storage";
+// Header reutilizado desde ProductosPanel
+function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
+  return (
+    <header className="encabezado">
+      <a className="logo" href="/admin">
+        <img src="/img/LOGO.png" alt="Logo" className="logoBase" />
+      </a>
+
+      {/* Botón menú móvil */}
+      <button
+        id="btnMenu"
+        type="button"
+        className={`btn-menu ${isMenuOpen ? "is-open" : ""}`}
+        aria-label="Abrir menú"
+        aria-expanded={isMenuOpen}
+        aria-controls="menuLateral"
+        onClick={onToggleMenu}
+      >
+        <span className="icono-menu" aria-hidden="true">☰</span>
+        <span className="icono-cerrar" aria-hidden="true">✕</span>
+      </button>
+
+      {/* NAV escritorio */}
+      <nav className="navegacion">
+        <a href="/cliente/index.html">Inicio</a>
+        <a href="/cliente/productos.html">Productos</a>
+        <button
+          id="btnPerfilDesk"
+          type="button"
+          className="perfil-desk"
+          aria-label="Mi cuenta"
+          onClick={onOpenAccount}
+        >
+          <img src="/img/imgPerfil.png" alt="" loading="lazy" />
+        </button>
+      </nav>
+    </header>
+  );
+}
+import { useAuth } from "../../context/AuthContext";
+import { obtenerProductos, obtenerPedidos, usuariosAPI } from "../../services/apiService";
 
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
@@ -28,34 +68,69 @@ function normalizarFechaUsuario(u) {
 }
 
 function useSessionData() {
-  const [user, setUser] = useState(null);
+  const { user, isAuthenticated } = useAuth();
   const [productos, setProductos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
+    if (!isAuthenticated || !user) {
       alert("Acceso restringido.");
-      window.location.href = "/index.html";
+      window.location.href = "/cliente/";
       return;
     }
-    setUser(u);
-    setProductos(Array.isArray(obtener("productos", [])) ? obtener("productos", []) : []);
-    setUsuarios(Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : []);
-    setPedidos(Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []);
-  }, []);
+
+    const loadData = async () => {
+      try {
+  // Cargando datos del dashboard desde el backend
+        
+        // Cargar productos
+        const productosData = await obtenerProductos();
+  // Productos cargados correctamente
+        setProductos(Array.isArray(productosData) ? productosData : []);
+
+        // Cargar pedidos
+        const pedidosData = await obtenerPedidos();
+  // Pedidos cargados correctamente
+        setPedidos(Array.isArray(pedidosData) ? pedidosData : []);
+
+        // Intentar cargar usuarios (el backend valida permisos)
+        // Información del usuario actual obtenida
+        
+        try {
+          // Intentando cargar usuarios desde el backend
+          const usuariosData = await usuariosAPI.getAll();
+          // Usuarios cargados exitosamente
+          // Muestra de usuarios obtenida
+          setUsuarios(Array.isArray(usuariosData) ? usuariosData : []);
+        } catch (error) {
+          // Si ocurre un error al cargar usuarios, se guarda el mensaje en el estado
+          
+          // Si es error de permisos, es normal para usuarios no-admin
+          if (error.status === 403 || error.status === 401) {
+            // Usuario sin permisos para ver usuarios (normal si no es admin)
+          }
+          setUsuarios([]);
+        }
+
+  // Datos del dashboard cargados correctamente
+      } catch (error) {
+  // Si ocurre un error al cargar el dashboard, se guarda el mensaje en el estado
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [isAuthenticated, user]);
 
   const kpis = useMemo(() => {
-    // Productos
+    // KPIs del dashboard
     const totalProductos = productos.length;
     const inventario = productos.reduce((acc, p) => acc + (Number(p?.stock) || 0), 0);
-
-    // Compras: estados exitosos = pendiente o despachado (según tu consigna)
-    const estadosExito = new Set(["pendiente", "despachado"]);
+    const estadosExito = new Set(["pendiente", "despachado", "completado", "entregado"]);
     const comprasTotales = pedidos.filter((p) => estadosExito.has((p?.estado || "").toLowerCase())).length;
-
-    // Probabilidad de aumento mensual (compras mes actual vs mes anterior)
     const ahora = new Date();
     const refMesAnterior = mesAnterior(ahora);
     const comprasMesActual = pedidos.filter((p) => {
@@ -68,17 +143,12 @@ function useSessionData() {
     }).length;
     const variacion = comprasMesActual - comprasMesAnterior;
     const probAumento = Math.max(0, Math.round((variacion / Math.max(1, comprasMesAnterior)) * 100));
-
-    // Usuarios
     const totalUsuarios = usuarios.length;
     const nuevosUsuariosMes = usuarios.filter((u) => {
       const d = normalizarFechaUsuario(u);
       return esMismoMes(d, ahora);
     }).length;
-
-    // Pedidos pendientes (se mantiene)
     const pendientes = pedidos.filter((p) => (p?.estado || "").toLowerCase() === "pendiente").length;
-
     return {
       productos: totalProductos,
       inventario,
@@ -90,10 +160,7 @@ function useSessionData() {
     };
   }, [productos, usuarios, pedidos]);
 
-  return { user, productos, usuarios, pedidos, kpis };
-}
-
-function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
+  return { user, productos, usuarios, pedidos, kpis, loading };
   return (
     <header className="encabezado">
       <a className="logo" href="/admin">
@@ -133,6 +200,23 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
 }
 
 function SideMenu({ open, onClose, onOpenAccount }) {
+  const { logout } = useAuth();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await logout();
+      onClose();
+      window.location.href = "/cliente/";
+    } catch (error) {
+  // Si ocurre un error durante logout, se limpia el localStorage y se redirige
+      // Fallback - limpiar localStorage manualmente
+      localStorage.clear();
+      onClose();
+      window.location.href = "/cliente/";
+    }
+  };
+
   return (
     <>
       <aside
@@ -165,19 +249,14 @@ function SideMenu({ open, onClose, onOpenAccount }) {
             Mi cuenta
           </a>
 
-          <a href="../cliente/index.html" onClick={onClose}>Inicio</a>
-          <a href="../cliente/productos.html" onClick={onClose}>Productos</a>
+          <a href="/cliente/index.html" onClick={onClose}>Inicio</a>
+          <a href="/cliente/productos.html" onClick={onClose}>Productos</a>
 
           <a
-            href="../cliente/index.html"
+            href="#"
             id="linkSalirMov"
             data-bind="1"
-            onClick={(e) => {
-              e.preventDefault();
-              localStorage.removeItem("sesion");
-              onClose();
-              window.location.href = "../index.html";
-            }}
+            onClick={handleLogout}
           >
             Salir
           </a>
@@ -191,15 +270,29 @@ function SideMenu({ open, onClose, onOpenAccount }) {
 }
 
 function AccountPanel({ user, open, onClose }) {
+  const { logout } = useAuth();
+  
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
-  const codigo = user?.codigoReferido || "";
+  const codigo = user?.codigoReferido || `REF-${user?.run?.replace('-', '') || 'ADMIN'}`;
 
   const copyCode = async () => {
     try {
       await navigator.clipboard.writeText(codigo);
       alert("¡Copiado!");
     } catch {}
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = "/cliente/";
+    } catch (error) {
+  // Si ocurre un error durante logout, se limpia el localStorage y se redirige
+      // Fallback - limpiar localStorage manualmente
+      localStorage.clear();
+      window.location.href = "/cliente/";
+    }
   };
 
   // Si está cerrado, no se renderiza
@@ -232,9 +325,11 @@ function AccountPanel({ user, open, onClose }) {
             <img src="/img/imgPerfil.png" alt="Foto de perfil" />
           </div>
 
-          <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
-          <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="../cliente/perfil.html">Editar Perfil</a>
+          <p><strong>Nombre:</strong> {`${user?.nombre || user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "Administrador"}</p>
+          <p><strong>Correo:</strong> {user?.email || user?.correo || "—"}</p>
+          <p><strong>RUN:</strong> {user?.run || "—"}</p>
+          <p><strong>Tipo:</strong> <span style={{textTransform: 'capitalize'}}>{user?.tipo?.toLowerCase() || "Admin"}</span></p>
+          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
 
           <div className="panel-cuenta__bloque">
             <label><strong>Código de referido</strong></label>
@@ -242,7 +337,7 @@ function AccountPanel({ user, open, onClose }) {
               <input readOnly value={codigo} />
               <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
             </div>
-            <small className="pista">Compartí este código para ganar puntos.</small>
+            <small className="pista">Código para referir nuevos usuarios.</small>
           </div>
 
           <div className="panel-cuenta__bloque">
@@ -252,14 +347,11 @@ function AccountPanel({ user, open, onClose }) {
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="../cliente/misCompras.html">Mis compras</a>
+            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
             <button
               id="btnSalirCuenta"
               className="btn"
-              onClick={() => {
-                localStorage.removeItem("sesion");
-                window.location.href = "../cliente/index.html";
-              }}
+              onClick={handleLogout}
             >
               Salir
             </button>
@@ -273,7 +365,7 @@ function AccountPanel({ user, open, onClose }) {
 }
 
 export default function AdminPanelReact() {
-  const { user, kpis } = useSessionData();
+  const { user, kpis, loading } = useSessionData();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
@@ -283,9 +375,45 @@ export default function AdminPanelReact() {
     return () => document.body.classList.remove("menu-abierto");
   }, [menuOpen]);
 
-  if (!user) return null;
+  if (loading) {
+    return (
+      <div className="principal">
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          flexDirection: 'column'
+        }}>
+          <div>Cargando panel de administración...</div>
+          <div style={{marginTop: 10, fontSize: '0.9em', color: '#666'}}>
+            Conectando con el backend...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const isAdmin = user.tipoUsuario === "admin";
+  if (!user) {
+    return (
+      <div className="principal">
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          flexDirection: 'column'
+        }}>
+          <div>Error: No se pudo cargar la información del usuario</div>
+          <button onClick={() => window.location.href = "/cliente/"}>
+            Volver al inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isAdmin = user.tipo === "ADMIN" || user.tipo === "admin" || user.tipoUsuario === "admin";
 
   return (
     <div className="principal">

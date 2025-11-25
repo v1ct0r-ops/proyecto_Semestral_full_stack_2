@@ -1,27 +1,45 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { obtener, guardar, usuarioActual } from "../../utils/storage";
+// src/components/usuarios/UsuariosPanel.jsx
+import React, { useEffect, useRef, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { usuariosAPI } from "../../services/apiService";
 
+// Esta función calcula el nivel del usuario según sus puntos
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
-// ========= Helpers mínimos =========
+// ========= Hook de sesión + carga desde backend =========
 function useSessionData() {
-  const [user, setUser] = useState(null);
+  const { user, isAuthenticated } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
+    if (!isAuthenticated || !user) {
       alert("Acceso restringido.");
-      window.location.href = "/index.html";
+      window.location.href = "/cliente/";
       return;
     }
-    setUser(u);
-    setUsuarios(Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : []);
-  }, []);
 
-  return { user, usuarios, setUsuarios };
+    const load = async () => {
+      try {
+        // Cargar usuarios desde el backend
+        const data = await usuariosAPI.getAll();
+        // Guardamos la lista de usuarios obtenida
+        setUsuarios(Array.isArray(data) ? data : []);
+      } catch (err) {
+        // Si ocurre un error al cargar usuarios, dejamos la lista vacía
+        setUsuarios([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [isAuthenticated, user]);
+
+  return { user, usuarios, setUsuarios, loading };
 }
 
+// ========= Header =========
 function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
   return (
     <header className="encabezado">
@@ -33,7 +51,7 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
       <button
         id="btnMenu"
         type="button"
-        className="btn-menu"
+        className={`btn-menu ${isMenuOpen ? "is-open" : ""}`}
         aria-label="Abrir menú"
         aria-expanded={isMenuOpen}
         aria-controls="menuLateral"
@@ -61,7 +79,24 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
   );
 }
 
+// ========= Menú lateral =========
 function SideMenu({ open, onClose, onOpenAccount }) {
+  const { logout } = useAuth();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await logout();
+      onClose();
+      window.location.href = "/cliente/";
+    } catch (error) {
+      // Si ocurre un error durante logout, limpiamos el storage y redirigimos igual
+      localStorage.clear();
+      onClose();
+      window.location.href = "/cliente/";
+    }
+  };
+
   return (
     <>
       <aside
@@ -74,12 +109,12 @@ function SideMenu({ open, onClose, onOpenAccount }) {
         <div className="menu-cabecera">
           <a className="logo" href="/admin">
             <span className="marca">
-              LEVEL<span className="up">UP</span> <span className="gamer">GAMER</span>
+              LEVEL<span className="up">UP</span>{" "}
+              <span className="gamer">GAMER</span>
             </span>
           </a>
         </div>
 
-        {/* SOLO: Mi cuenta, Inicio, Productos y Salir */}
         <nav id="menuLista" className="menu-lista" data-clonado="1">
           <a
             href="#"
@@ -94,32 +129,32 @@ function SideMenu({ open, onClose, onOpenAccount }) {
             Mi cuenta
           </a>
 
-          <a href="/cliente/index.html" onClick={onClose}>Inicio</a>
-          <a href="/cliente/productos.html" onClick={onClose}>Productos</a>
+          <a href="/cliente/index.html" onClick={onClose}>
+            Inicio
+          </a>
+          <a href="/cliente/productos.html" onClick={onClose}>
+            Productos
+          </a>
 
           <a
             href="/cliente/index.html"
             id="linkSalirMov"
             data-bind="1"
-            onClick={(e) => {
-              e.preventDefault();
-              localStorage.removeItem("sesion");
-              onClose();
-              window.location.href = "../index.html";
-            }}
+            onClick={handleLogout}
           >
             Salir
           </a>
         </nav>
       </aside>
 
-      {/* Cortina */}
       <div id="cortina" className="cortina" hidden={!open} onClick={onClose} />
     </>
   );
 }
 
+// ========= Panel de cuenta =========
 function AccountPanel({ user, open, onClose }) {
+  const { logout } = useAuth();
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
   const codigo = user?.codigoReferido || "";
@@ -131,7 +166,17 @@ function AccountPanel({ user, open, onClose }) {
     } catch {}
   };
 
-  // Si está cerrado, no se renderiza
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = "/cliente/";
+    } catch (error) {
+      // Si ocurre un error durante logout, limpiamos el storage y redirigimos igual
+      localStorage.clear();
+      window.location.href = "/cliente/";
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -161,35 +206,53 @@ function AccountPanel({ user, open, onClose }) {
             <img src="/img/imgPerfil.png" alt="Foto de perfil" />
           </div>
 
-          <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
-          <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
+          <p>
+            <strong>Nombre:</strong>{" "}
+            {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}
+          </p>
+          <p>
+            <strong>Correo:</strong> {user?.correo || user?.email || "—"}
+          </p>
+          <a className="btn secundario" href="/cliente/perfil.html">
+            Editar Perfil
+          </a>
 
           <div className="panel-cuenta__bloque">
-            <label><strong>Código de referido</strong></label>
+            <label>
+              <strong>Código de referido</strong>
+            </label>
             <div className="panel-cuenta__ref">
               <input readOnly value={codigo} />
-              <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
+              <button
+                className="btn secundario"
+                type="button"
+                onClick={copyCode}
+              >
+                Copiar
+              </button>
             </div>
-            <small className="pista">Compartí este código para ganar puntos.</small>
+            <small className="pista">
+              Compartí este código para ganar puntos.
+            </small>
           </div>
 
           <div className="panel-cuenta__bloque">
-            <p><strong>Puntos LevelUp:</strong> <span>{puntos}</span></p>
-            <p><strong>Nivel:</strong> <span>{nivel}</span></p>
-            <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+            <p>
+              <strong>Puntos LevelUp:</strong> <span>{puntos}</span>
+            </p>
+            <p>
+              <strong>Nivel:</strong> <span>{nivel}</span>
+            </p>
+            <small className="pista">
+              Bronce: 0–199 · Plata: 200–499 · Oro: 500+
+            </small>
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
-            <button
-              id="btnSalirCuenta"
-              className="btn"
-              onClick={() => {
-                localStorage.removeItem("sesion");
-                window.location.href = "/cliente/index.html";
-              }}
-            >
+            <a className="btn secundario" href="/cliente/misCompras.html">
+              Mis compras
+            </a>
+            <button id="btnSalirCuenta" className="btn" onClick={handleLogout}>
               Salir
             </button>
           </div>
@@ -201,9 +264,9 @@ function AccountPanel({ user, open, onClose }) {
   );
 }
 
-// Reutilizamos el patrón de diálogo de ProductosPanel (confirmación)
+// ========= Página principal =========
 export default function UsuariosPanel() {
-  const { user, usuarios, setUsuarios } = useSessionData();
+  const { user, usuarios, setUsuarios, loading } = useSessionData();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const deleteDialogRef = useRef(null);
@@ -214,8 +277,47 @@ export default function UsuariosPanel() {
     return () => document.body.classList.remove("menu-abierto");
   }, [menuOpen]);
 
+  if (loading) {
+    return (
+      <div className="principal">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            flexDirection: "column",
+          }}
+        >
+          <div>Cargando usuarios.</div>
+          <div style={{ marginTop: 10, fontSize: "0.9em", color: "#666" }}>
+            Obteniendo datos del backend.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) return null;
-  const isAdmin = user.tipoUsuario === "admin";
+
+  const isAdmin =
+    user.tipo === "ADMIN" ||
+    user.tipo === "admin" ||
+    user.tipoUsuario === "ADMIN" ||
+    user.tipoUsuario === "admin";
+
+  const handleDeleteConfirmed = async (e) => {
+    e.preventDefault();
+    if (!deleteRun) return;
+    try {
+      await usuariosAPI.delete(deleteRun);
+      setUsuarios((prev) => prev.filter((u) => u.run !== deleteRun));
+      deleteDialogRef.current?.close();
+    } catch (err) {
+      // Si ocurre un error al eliminar usuario, mostramos alerta
+      alert("No se pudo eliminar el usuario. Revisa la consola.");
+    }
+  };
 
   return (
     <div className="principal">
@@ -227,15 +329,19 @@ export default function UsuariosPanel() {
       <SideMenu
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        isAdmin={isAdmin}
         onOpenAccount={() => setAccountOpen(true)}
       />
 
       <section className="admin">
+        {/* Menú lateral (desktop) */}
         <aside className="menu-admin">
           <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
-          {isAdmin && <a href="/admin/usuarios" className="activo">Usuarios</a>}
+          {isAdmin && (
+            <a href="/admin/usuarios" className="activo">
+              Usuarios
+            </a>
+          )}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
@@ -245,8 +351,18 @@ export default function UsuariosPanel() {
         <div className="panel">
           <h1>Usuarios</h1>
           {isAdmin && (
-            <div className="acciones" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-              <a className="btn primario solo-admin" href="/admin/usuario-nuevo">Nuevo Usuario</a>
+            <div
+              className="acciones"
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                marginBottom: 12,
+              }}
+            >
+              <a className="btn primario solo-admin" href="/admin/usuario-nuevo">
+                Nuevo Usuario
+              </a>
             </div>
           )}
 
@@ -266,11 +382,18 @@ export default function UsuariosPanel() {
                   <tr key={u.run}>
                     <td>{u.run}</td>
                     <td>{`${u.nombres || ""} ${u.apellidos || ""}`.trim()}</td>
-                    <td>{u.correo || "—"}</td>
-                    <td>{u.tipoUsuario || "—"}</td>
+                    <td>{u.correo || u.email || "—"}</td>
+                    <td>{u.tipoUsuario || u.tipo || "—"}</td>
                     {isAdmin && (
-                      <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <a className="btn secundario" href={`/admin/usuario/editar/${encodeURIComponent(u.run)}`}>
+                      <td
+                        style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                      >
+                        <a
+                          className="btn secundario"
+                          href={`/admin/usuario/editar/${encodeURIComponent(
+                            u.run
+                          )}`}
+                        >
                           Editar
                         </a>
                         <button
@@ -283,7 +406,12 @@ export default function UsuariosPanel() {
                         >
                           Eliminar
                         </button>
-                        <a className="btn secundario" href={`/admin/usuario/historial/${encodeURIComponent(u.run)}`}>
+                        <a
+                          className="btn secundario"
+                          href={`/admin/usuario/historial/${encodeURIComponent(
+                            u.run
+                          )}`}
+                        >
                           Historial
                         </a>
                       </td>
@@ -293,7 +421,9 @@ export default function UsuariosPanel() {
               ) : (
                 <tr>
                   <td colSpan={isAdmin ? 5 : 4}>
-                    <p className="info" style={{ margin: 0 }}>No hay usuarios cargados.</p>
+                    <p className="info" style={{ margin: 0 }}>
+                      No hay usuarios cargados.
+                    </p>
                   </td>
                 </tr>
               )}
@@ -302,29 +432,28 @@ export default function UsuariosPanel() {
 
           {/* Dialog confirmar eliminación */}
           <dialog ref={deleteDialogRef} className="modal">
-            <form method="dialog" className="formulario" style={{ minWidth: 320, maxWidth: 480 }}>
+            <form
+              method="dialog"
+              className="formulario"
+              style={{ minWidth: 320, maxWidth: 480 }}
+            >
               <h3>Eliminar usuario</h3>
               <p>
-                ¿Estás seguro de eliminar al usuario <strong>{deleteRun}</strong>? Esta acción no se puede deshacer.
+                ¿Estás seguro de eliminar al usuario{" "}
+                <strong>{deleteRun}</strong>? Esta acción no se puede deshacer.
               </p>
-              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  justifyContent: "flex-end",
+                  marginTop: 12,
+                }}
+              >
                 <button
                   className="btn peligro"
                   value="ok"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!deleteRun) return;
-
-                    const lista = Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : [];
-                    const idx = lista.findIndex((x) => x.run === deleteRun);
-                    if (idx >= 0) {
-                      lista.splice(idx, 1);
-                      guardar("usuarios", lista);
-                      // refrescamos estado en memoria
-                      setUsuarios(lista);
-                    }
-                    deleteDialogRef.current?.close();
-                  }}
+                  onClick={handleDeleteConfirmed}
                 >
                   Estoy seguro
                 </button>
@@ -348,7 +477,11 @@ export default function UsuariosPanel() {
         <p>© 2025 Level-Up Gamer — Chile</p>
       </footer>
 
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel
+        user={user}
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
     </div>
   );
 }

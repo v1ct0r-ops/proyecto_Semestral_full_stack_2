@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { obtener, usuarioActual, guardar } from "../../utils/storage";
+import { pedidosAPI, obtenerProductos } from "../../services/apiService";
 
 // ===== Helpers =====
 const CLP = (n) =>
@@ -26,31 +27,63 @@ const fechaHoraLarga = (ts) => {
 };
 
 const estadoLabel = (estado) => {
-  const e = (estado || "").toLowerCase();
-  if (e === "despachado") return "Despachado";
-  if (e === "cancelado") return "Cancelado";
+  const e = (estado || "").toUpperCase();
+  if (e === "DESPACHADO") return "Despachado";
+  if (e === "CANCELADO") return "Cancelado";
   return "Pendiente";
 };
 
-// ===== Hook sesión simple =====
+// ===== Hook sesión con API Backend =====
 function useSessionData() {
   const [user, setUser] = useState(null);
   const [pedidos, setPedidos] = useState([]);
   const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
-      alert("Acceso restringido.");
-      window.location.href = "/index.html";
-      return;
-    }
-    setUser(u);
-    setPedidos(Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []);
-    setProductos(Array.isArray(obtener("productos", [])) ? obtener("productos", []) : []);
+    const loadData = async () => {
+      try {
+        const u = await usuarioActual();
+        if (!u) {
+          alert("Acceso restringido.");
+          window.location.href = "/index.html";
+          return;
+        }
+        setUser(u);
+
+        // Cargar pedidos y productos desde API backend
+    // Cargar pedidos y productos desde el backend
+        const [pedidosData, productosData] = await Promise.all([
+          pedidosAPI.getAll(),
+          obtenerProductos(),
+        ]);
+
+        // Datos cargados correctamente
+        setPedidos(Array.isArray(pedidosData) ? pedidosData : []);
+        setProductos(Array.isArray(productosData) ? productosData : []);
+
+        setLoading(false);
+      } catch (error) {
+  // Si ocurre un error al cargar los datos, se guarda el mensaje en el estado
+        setError(error.message);
+  // Si hay error, se usan datos locales como respaldo
+        setPedidos(
+          Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []
+        );
+        setProductos(
+          Array.isArray(obtener("productos", []))
+            ? obtener("productos", [])
+            : []
+        );
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  return { user, pedidos, setPedidos, productos };
+  return { user, pedidos, setPedidos, productos, loading, error };
 }
 
 // ===== Header / SideMenu / AccountPanel (idénticos a lo que ya usas) =====
@@ -108,13 +141,19 @@ function SideMenu({ open, onClose, onOpenAccount }) {
         <div className="menu-cabecera">
           <a className="logo" href="/admin">
             <span className="marca">
-              LEVEL<span className="up">UP</span> <span className="gamer">GAMER</span>
+              LEVEL<span className="up">UP</span>{" "}
+              <span className="gamer">GAMER</span>
             </span>
           </a>
         </div>
 
         {/* NAV móvil: Mi cuenta, Inicio, Productos y Salir */}
-        <nav id="menuLista" className="menu-lista" data-clonado="1" onClick={onClose}>
+        <nav
+          id="menuLista"
+          className="menu-lista"
+          data-clonado="1"
+          onClick={onClose}
+        >
           <a
             href="#"
             id="linkMiCuentaMov"
@@ -222,7 +261,9 @@ function AccountPanel({ user, open, onClose }) {
             <p>
               <strong>Nivel:</strong> <span>{nivel}</span>
             </p>
-            <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+            <small className="pista">
+              Bronce: 0–199 · Plata: 200–499 · Oro: 500+
+            </small>
           </div>
 
           <div className="panel-cuenta__acciones">
@@ -252,7 +293,8 @@ function AccountPanel({ user, open, onClose }) {
 export default function DetallePedidoPanel() {
   const { id: paramId } = useParams(); // viene desde /admin/pedidos/:id
   const navigate = useNavigate();
-  const { user, pedidos, setPedidos, productos } = useSessionData();
+  const { user, pedidos, setPedidos, productos, loading, error } =
+    useSessionData();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -263,69 +305,117 @@ export default function DetallePedidoPanel() {
     return () => document.body.classList.remove("menu-abierto");
   }, [menuOpen]);
 
-  // Normaliza id (en la lista le quitamos el prefijo PED- al navegar)
-  const pedido = useMemo(() => {
-    if (!Array.isArray(pedidos)) return null;
-    if (!paramId) return null;
+  const [pedido, setPedido] = useState(null);
+  const [loadingPedido, setLoadingPedido] = useState(true);
 
-    // Puede venir con o sin "PED-"
-    const plain = decodeURIComponent(paramId);
-    const match = pedidos.find(
-      (p) =>
-        String(p.id).toLowerCase() === plain.toLowerCase() ||
-        String(p.id).toLowerCase() === `ped-${plain}`.toLowerCase() ||
-        String(plain).toLowerCase() === `ped-${String(p.id)}`.toLowerCase()
-    );
-    return match || null;
-  }, [pedidos, paramId]);
+  // Cargar pedido específico desde la API
+  useEffect(() => {
+    const cargarPedidoEspecifico = async () => {
+      if (!paramId) return;
+
+      try {
+        setLoadingPedido(true);
+        const plain = decodeURIComponent(paramId);
+  // Cargando pedido específico por ID
+
+        const pedidoData = await pedidosAPI.getById(plain);
+  // Pedido cargado correctamente
+        setPedido(pedidoData);
+      } catch (error) {
+  // Si ocurre un error al cargar el pedido, se muestra un mensaje
+        setPedido(null);
+      } finally {
+        setLoadingPedido(false);
+      }
+    };
+
+    cargarPedidoEspecifico();
+  }, [paramId]);
 
   if (!user) return null;
 
-  const isAdmin = user.tipoUsuario === "admin";
+  // 🔥 CORRECCIÓN: detección robusta de administrador
+  const tipo = (user?.tipoUsuario ?? user?.tipo ?? "")
+    .toString()
+    .trim()
+    .toUpperCase();
+  const isAdmin = tipo === "ADMIN";
 
-  // Datos de cliente
-  const comprador = pedido?.comprador || pedido?.usuario || pedido?.cliente || {};
-  const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${
-    comprador.apellidos || comprador.apellido || ""
+  // Datos de cliente (vienen del backend en pedido.usuario)
+  const comprador = pedido?.usuario || {};
+  const nombreCompleto = `${comprador.nombres || ""} ${
+    comprador.apellidos || ""
   }`.trim();
-  const correo = comprador.correo || comprador.email || "—";
+  const correo = comprador.correo || "—";
 
-  // Dirección envío
-  const envio = pedido?.envio || {};
-  const dir = envio.direccion || envio.calle || envio.detalle || "—";
-  const comuna = envio.comuna || "—";
-  const region = envio.region || "—";
+  // Dirección envío (vienen directos en el pedido)
+  const dir = pedido?.direccion || "—";
+  const comuna = pedido?.comuna || "—";
+  const region = pedido?.region || "—";
 
-  // Items enriquecidos con nombre de producto
+  // Items enriquecidos con nombre de producto (ahora debe venir del backend)
+  // Procesar datos del pedido y sus items
+
   const items = (pedido?.items || []).map((it) => {
     const prod = Array.isArray(productos)
-      ? productos.find((x) => x.codigo === it.codigo)
+      ? productos.find(
+          (x) =>
+            x.codigo ===
+            (it.producto?.codigo || it.codigoProducto || it.codigo)
+        )
       : null;
+
     return {
       ...it,
-      nombre: prod?.nombre || it.codigo,
+      codigo: it.producto?.codigo || it.codigoProducto || it.codigo,
+      nombre:
+        it.producto?.nombre || prod?.nombre || it.codigo || "Producto sin nombre",
+      precio: it.precio || it.precioUnitario || 0,
+      cantidad: it.cantidad || 1,
     };
   });
 
-  const marcarDespachado = () => {
-    if (!pedido) return;
-    if (pedido.estado === "despachado" || pedido.estado === "cancelado") return;
 
-    const nuevos = pedidos.map((p) =>
-      p.id === pedido.id ? { ...p, estado: "despachado" } : p
-    );
-    setPedidos(nuevos);
-    localStorage.setItem("pedidos", JSON.stringify(nuevos));
-    alert("Pedido marcado como despachado.");
+  const marcarDespachado = async () => {
+    if (!pedido) return;
+    if (pedido.estado === "DESPACHADO" || pedido.estado === "CANCELADO") return;
+
+    try {
+      // Actualizar estado en el backend
+      const pedidoActualizado = await pedidosAPI.updateStatus(
+        pedido.id,
+        "DESPACHADO"
+      );
+
+      // Actualizar el pedido local
+      setPedido(pedidoActualizado);
+
+      // Actualizar la lista de pedidos si existe
+      if (setPedidos && Array.isArray(pedidos)) {
+        const nuevos = pedidos.map((p) =>
+          p.id === pedido.id ? { ...p, estado: "DESPACHADO" } : p
+        );
+        setPedidos(nuevos);
+      }
+
+      alert("Pedido marcado como despachado.");
+    } catch (error) {
+      // Si ocurre un error al actualizar el estado, se muestra un mensaje al usuario
+      alert("Error al actualizar el estado del pedido");
+    }
   };
 
   // Generar (si no existe) y navegar a la boleta relacionada
   const verOMantenerBoleta = () => {
     if (!pedido) return;
 
-    const boletasExistentes = Array.isArray(obtener("boletas", [])) ? obtener("boletas", []) : [];
+    const boletasExistentes = Array.isArray(obtener("boletas", []))
+      ? obtener("boletas", [])
+      : [];
     // Buscar boleta existente para este pedido
-    const boletaExistente = boletasExistentes.find(b => b.pedidoId === pedido.id);
+    const boletaExistente = boletasExistentes.find(
+      (b) => b.pedidoId === pedido.id
+    );
     if (boletaExistente) {
       const numero = encodeURIComponent(boletaExistente.numero);
       navigate(`/admin/boleta/${numero}`);
@@ -334,46 +424,71 @@ export default function DetallePedidoPanel() {
 
     // Crear nueva boleta con la misma estructura que usa el panel de Boletas
     const comprador = pedido?.comprador || pedido?.usuario || pedido?.cliente || {};
-    const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim() || "Cliente";
+    const nombreCompleto =
+      `${comprador.nombres || comprador.nombre || ""} ${
+        comprador.apellidos || comprador.apellido || ""
+      }`.trim() || "Cliente";
     const timestamp = Date.now();
     const numeroBoleta = `BOL-${String(timestamp).slice(-6)}`;
     const nuevaBoleta = {
       numero: numeroBoleta,
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: new Date().toISOString().split("T")[0],
       cliente: nombreCompleto,
       pedidoId: pedido.id,
       // calcular total con descuentos (mismas reglas que cliente)
       // subtotal
       total: null,
       totalNumerico: 0,
-      fechaCreacion: new Date().toISOString()
+      fechaCreacion: new Date().toISOString(),
     };
 
     // calcular subtotal a partir de items
-    const productos = Array.isArray(obtener("productos")) ? obtener("productos") : [];
-    const items = (pedido.items || []).map(it => {
-      const p = productos.find(x => x.codigo === it.codigo);
+    const productos = Array.isArray(obtener("productos"))
+      ? obtener("productos")
+      : [];
+    const items = (pedido.items || []).map((it) => {
+      const p = productos.find((x) => x.codigo === it.codigo);
       return { ...it, nombre: p ? p.nombre : it.codigo };
     });
-    const subtotal = items.reduce((s, it) => s + (Number(it.precio || 0) * Number(it.cantidad || 1)), 0);
+    const subtotal = items.reduce(
+      (s, it) =>
+        s + Number(it.precio || 0) * Number(it.cantidad || 1),
+      0
+    );
 
     const VALOR_PUNTO = 10;
-    const TOPE_DESC_POR_PUNTOS = 0.20;
+    const TOPE_DESC_POR_PUNTOS = 0.2;
     // puntos comprador (buscar en usuarios por correo si existe)
     let puntosComprador = 0;
     try {
-      const usuarios = Array.isArray(obtener("usuarios")) ? obtener("usuarios") : [];
-      const u = usuarios.find(x => (x.correo||"").toLowerCase() === (comprador.correo||"").toLowerCase());
+      const usuarios = Array.isArray(obtener("usuarios"))
+        ? obtener("usuarios")
+        : [];
+      const u = usuarios.find(
+        (x) =>
+          (x.correo || "").toLowerCase() ===
+          (comprador.correo || "").toLowerCase()
+      );
       puntosComprador = u ? Number(u.puntosLevelUp || 0) : 0;
-    } catch { puntosComprador = 0; }
+    } catch {
+      puntosComprador = 0;
+    }
 
-    const aplicaDuoc = (comprador && (comprador.correo || "").toLowerCase().endsWith("@duoc.cl"));
-    const descuentoDuoc = aplicaDuoc ? Math.round(subtotal * 0.20) : 0;
+    const aplicaDuoc = (comprador && (comprador.correo || "")
+      .toLowerCase()
+      .endsWith("@duoc.cl"));
+    const descuentoDuoc = aplicaDuoc ? Math.round(subtotal * 0.2) : 0;
     const valorPuntosDisponibles = Math.max(0, puntosComprador * VALOR_PUNTO);
     const maxPorPuntos = Math.round(subtotal * TOPE_DESC_POR_PUNTOS);
-    const descuentoPuntos = Math.min(valorPuntosDisponibles, maxPorPuntos);
+    const descuentoPuntos = Math.min(
+      valorPuntosDisponibles,
+      maxPorPuntos
+    );
 
-    const totalNumerico = Math.max(0, subtotal - descuentoDuoc - descuentoPuntos);
+    const totalNumerico = Math.max(
+      0,
+      subtotal - descuentoDuoc - descuentoPuntos
+    );
     nuevaBoleta.totalNumerico = totalNumerico;
     nuevaBoleta.total = CLP(totalNumerico);
 
@@ -383,8 +498,9 @@ export default function DetallePedidoPanel() {
     navigate(`/admin/boleta/${encodeURIComponent(numeroBoleta)}`);
   };
 
-  const titulo =
-    pedido ? `Pedido ${pedido.id} — ${estadoLabel(pedido.estado).toUpperCase()}` : "Pedido";
+  const titulo = pedido
+    ? `PED-${pedido.id} — ${estadoLabel(pedido.estado).toUpperCase()}`
+    : "Pedido";
 
   return (
     <div className="principal">
@@ -409,7 +525,9 @@ export default function DetallePedidoPanel() {
           <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
-          <a href="/admin/pedidos" className="activo">Pedidos</a>
+          <a href="/admin/pedidos" className="activo">
+            Pedidos
+          </a>
           <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
           <a href="/admin/reportes">Reportes</a>
@@ -418,12 +536,43 @@ export default function DetallePedidoPanel() {
         <div className="panel">
           <h1 id="tituloPedido">{titulo}</h1>
 
-          {!pedido ? (
+          {loading || loadingPedido ? (
+            <article className="tarjeta">
+              <div className="contenido">
+                <p className="info">🔄 Cargando pedido desde el backend...</p>
+              </div>
+            </article>
+          ) : error ? (
+            <article className="tarjeta">
+              <div className="contenido">
+                <p className="info" style={{ color: "#dc2626" }}>
+                  ❌ Error: {error}
+                </p>
+                <p>
+                  <small>
+                    Revisa que el backend Spring Boot esté ejecutándose en
+                    puerto 8080
+                  </small>
+                </p>
+                <div className="acciones" style={{ marginTop: 8 }}>
+                  <button
+                    className="btn secundario"
+                    onClick={() => navigate("/admin/pedidos")}
+                  >
+                    Volver a pedidos
+                  </button>
+                </div>
+              </div>
+            </article>
+          ) : !pedido ? (
             <article className="tarjeta">
               <div className="contenido">
                 <p className="info">Pedido no encontrado.</p>
                 <div className="acciones" style={{ marginTop: 8 }}>
-                  <button className="btn secundario" onClick={() => navigate("/admin/pedidos")}>
+                  <button
+                    className="btn secundario"
+                    onClick={() => navigate("/admin/pedidos")}
+                  >
                     Volver a pedidos
                   </button>
                 </div>
@@ -438,7 +587,8 @@ export default function DetallePedidoPanel() {
                       <strong>Fecha:</strong> {fechaHoraLarga(pedido.fecha)}
                     </p>
                     <p>
-                      <strong>Cliente:</strong> {nombreCompleto || "—"} — {correo}
+                      <strong>Cliente:</strong> {nombreCompleto || "—"} —{" "}
+                      {correo}
                     </p>
                     <p>
                       <strong>Envío:</strong> {dir}, {comuna}, {region}
@@ -447,58 +597,108 @@ export default function DetallePedidoPanel() {
                       <strong>Total:</strong> {CLP(pedido.total || 0)}
                     </p>
 
-                    <h4>Ítems</h4>
+                    <h4>Ítems del Pedido</h4>
                     {(items || []).length === 0 ? (
-                      <p className="info">Sin ítems.</p>
+                      <p className="info">Sin ítems encontrados.</p>
                     ) : (
-                      items.map((it, idx) => (
-                        <div key={idx} className="item-carrito">
-                          <div>
-                            <strong>{it.nombre}</strong>
-                            <br />
-                            <small>{it.codigo}</small>
+                      <div className="items-pedido">
+                        {items.map((it, idx) => (
+                          <div key={idx} className="item-carrito">
+                            <div>
+                              <strong>{it.nombre}</strong>
+                              <br />
+                              <small>Código: {it.codigo}</small>
+                            </div>
+                            <div>{CLP(it.precio || 0)}</div>
+                            <div>x{it.cantidad || 1}</div>
+                            <div>
+                              <strong>
+                                {CLP(
+                                  (it.precio || 0) * (it.cantidad || 1)
+                                )}
+                              </strong>
+                            </div>
                           </div>
-                          <div>{CLP(it.precio || 0)}</div>
-                          <div>x{it.cantidad || 1}</div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     )}
+
+                    <h4 style={{ marginTop: "20px" }}>Resumen de Totales</h4>
+                    <div className="totales-pedido">
+                      <div className="total-row">
+                        <span>Subtotal:</span>
+                        <span>{CLP(pedido.subtotal || 0)}</span>
+                      </div>
+                      {pedido.descuentoDuoc > 0 && (
+                        <div className="total-row descuento">
+                          <span>Descuento Duoc (20%):</span>
+                          <span>-{CLP(pedido.descuentoDuoc)}</span>
+                        </div>
+                      )}
+                      {pedido.descuentoPuntos > 0 && (
+                        <div className="total-row descuento">
+                          <span>Descuento con puntos:</span>
+                          <span>-{CLP(pedido.descuentoPuntos)}</span>
+                        </div>
+                      )}
+                      <div
+                        className="total-row total-final"
+                        style={{
+                          borderTop: "1px solid #ddd",
+                          paddingTop: "8px",
+                          marginTop: "8px",
+                        }}
+                      >
+                        <span>
+                          <strong>Total Final:</strong>
+                        </span>
+                        <span>
+                          <strong>{CLP(pedido.total || 0)}</strong>
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </article>
               </div>
 
-              <div style={{ marginTop: 12 }}>
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  gap: "8px",
+                  flexWrap: "wrap",
+                }}
+              >
                 <button
                   id="btnMarcarDespachado"
                   className={
-                    pedido.estado === "pendiente" ? "btn exito" : "btn secundario"
+                    pedido.estado === "PENDIENTE" ? "btn exito" : "btn secundario"
                   }
-                  disabled={pedido.estado !== "pendiente"}
+                  disabled={pedido.estado !== "PENDIENTE"}
                   onClick={marcarDespachado}
-                  style={{ cursor: pedido.estado === "pendiente" ? "pointer" : "default" }}
+                  style={{
+                    cursor:
+                      pedido.estado === "PENDIENTE" ? "pointer" : "default",
+                  }}
                 >
-                  {pedido.estado === "pendiente"
+                  {pedido.estado === "PENDIENTE"
                     ? "Marcar como despachado"
-                    : pedido.estado === "despachado"
+                    : pedido.estado === "DESPACHADO"
                     ? "Pedido despachado"
                     : "Pedido cancelado"}
                 </button>
 
-                {/* Nuevo botón Generar Boleta */}
-                {(pedido.estado === "pendiente" || pedido.estado === "despachado") && (
-                  <>
-                        {/* Un único botón Generar boleta que crea/guarda y navega a la boleta */}
-                        <button 
-                          style={{ paddingLeft: 16 }}
-                          id="btnGenerarBoleta"
-                          className="btn secundario"
-                          onClick={verOMantenerBoleta}
-                        >
-                          Generar boleta
-                        </button>
-                  </>
+                {/* Botón Generar Boleta */}
+                {(pedido.estado === "PENDIENTE" ||
+                  pedido.estado === "DESPACHADO") && (
+                  <button
+                    id="btnGenerarBoleta"
+                    className="btn secundario"
+                    onClick={verOMantenerBoleta}
+                  >
+                    Generar boleta
+                  </button>
                 )}
-
               </div>
             </>
           )}
@@ -510,7 +710,11 @@ export default function DetallePedidoPanel() {
       </footer>
 
       {/* Panel cuenta + cortina */}
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel
+        user={user}
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
     </div>
   );
 }

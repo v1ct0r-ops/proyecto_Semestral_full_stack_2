@@ -1,7 +1,8 @@
 // src/components/Productos/EditarProductoPanel.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { obtener, guardar, usuarioActual } from "../../utils/storage";
+import { useAuth } from "../../context/AuthContext";
+import { obtenerProductos, productosAPI } from "../../services/apiService";
 
 // === Helpers / formato
 const norm = (s) => String(s || "").trim();
@@ -99,7 +100,7 @@ function SideMenu({ open, onClose, isAdmin }) {
   );
 }
 
-function AccountPanel({ user, open, onClose }) {
+function AccountPanel({ user, open, onClose, logout }) {
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
   const codigoRef = user?.codigoReferido || "";
@@ -158,10 +159,7 @@ function AccountPanel({ user, open, onClose }) {
             <button
               id="btnSalirCuenta"
               className="btn"
-              onClick={() => {
-                localStorage.removeItem("sesion");
-                window.location.href = "/cliente/index.html";
-              }}
+              onClick={logout}
             >
               Salir
             </button>
@@ -178,9 +176,9 @@ export default function EditarProductoPanel() {
   const navigate = useNavigate();
   const params = useParams();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   // seguridad básica
-  const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
@@ -211,40 +209,50 @@ export default function EditarProductoPanel() {
   }, [params, location.search]);
 
   // categorías sugeridas (desde productos existentes)
-  const categorias = useMemo(() => {
-    const prods = Array.isArray(obtener("productos", [])) ? obtener("productos", []) : [];
-    const set = new Set(prods.map((p) => p.categoria).filter(Boolean));
-    return Array.from(set);
-  }, []);
+  const [categorias, setCategorias] = useState([]);
 
   // cargar sesión + producto
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
+    if (!user) {
       alert("Acceso restringido.");
       window.location.href = "/index.html";
       return;
     }
-    setUser(u);
 
-    const productos = Array.isArray(obtener("productos", [])) ? obtener("productos", []) : [];
-    const prod = productos.find((x) => String(x.codigo) === String(codigoRuta));
-    if (!prod) {
-      alert("Producto no encontrado.");
-      navigate("/admin/productos", { replace: true });
-      return;
-    }
+    // Cargar el producto específico y categorías
+    const cargarDatos = async () => {
+      try {
+        // Cargar todos los productos para obtener las categorías
+        const todosProductos = await obtenerProductos();
+        const categoriasUnicas = [...new Set(todosProductos.map(p => p.categoria).filter(Boolean))];
+        setCategorias(categoriasUnicas);
 
-    setCodigo(prod.codigo || "");
-    setNombre(prod.nombre || "");
-    setDescripcion(prod.descripcion || "");
-    setDetalles(prod.detalles || "");
-    setPrecio(prod.precio ?? "");
-    setStock(prod.stock ?? "");
-    setStockCritico(prod.stockCritico ?? "");
-    setCategoria(prod.categoria || "");
-    setImagen(prod.imagen || "");
-  }, [codigoRuta, navigate]);
+        // Buscar el producto específico
+        const prod = todosProductos.find((x) => String(x.codigo) === String(codigoRuta));
+        if (!prod) {
+          alert("Producto no encontrado.");
+          navigate("/admin/productos", { replace: true });
+          return;
+        }
+
+        setCodigo(prod.codigo || "");
+        setNombre(prod.nombre || "");
+        setDescripcion(prod.descripcion || "");
+        setDetalles(prod.detalles || "");
+        setPrecio(prod.precio ?? "");
+        setStock(prod.stock ?? "");
+        setStockCritico(prod.stockCritico ?? "");
+        setCategoria(prod.categoria || "");
+        setImagen(prod.imagen || "");
+      } catch (error) {
+        // Si ocurre un error al cargar el producto, mostrar alerta y redirigir
+        alert("Error cargando el producto.");
+        navigate("/admin/productos", { replace: true });
+      }
+    };
+
+    cargarDatos();
+  }, [codigoRuta, navigate, user]);
 
   useEffect(() => {
     document.body.classList.toggle("menu-abierto", menuOpen);
@@ -283,31 +291,34 @@ export default function EditarProductoPanel() {
     return ok;
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     if (!validar()) return;
 
-    const productos = Array.isArray(obtener("productos", [])) ? obtener("productos", []) : [];
-    const idx = productos.findIndex((p) => String(p.codigo) === String(codigo));
-    if (idx === -1) {
-      alert("No se pudo actualizar: producto no encontrado.");
-      return;
+    try {
+      const productoActualizado = {
+        codigo: codigo,
+        nombre: norm(nombre),
+        descripcion: norm(descripcion),
+        detalles: norm(detalles),
+        precio: Number(precio),
+        stock: Number(stock),
+        stockCritico: stockCritico === "" ? undefined : Number(stockCritico),
+        categoria: norm(categoria),
+        imagen: norm(imagen),
+      };
+
+      await productosAPI.update(codigo, productoActualizado);
+      setMsg("Cambios guardados correctamente.");
+      
+      // Limpiar el mensaje después de 3 segundos
+      setTimeout(() => {
+        setMsg("");
+      }, 3000);
+    } catch (error) {
+      // Si ocurre un error al actualizar, mostrar alerta
+      alert("Error al actualizar el producto: " + (error.message || "Error desconocido"));
     }
-
-    productos[idx] = {
-      ...productos[idx],
-      nombre: norm(nombre),
-      descripcion: norm(descripcion),
-      detalles: norm(detalles),
-      precio: Number(precio),
-      stock: Number(stock),
-      stockCritico: stockCritico === "" ? undefined : Number(stockCritico),
-      categoria: norm(categoria),
-      imagen: norm(imagen),
-    };
-
-    guardar("productos", productos);
-    setMsg("Cambios guardados correctamente.");
   };
 
   return (
@@ -464,7 +475,7 @@ export default function EditarProductoPanel() {
         </p>
       </footer>
 
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} logout={logout} />
     </div>
   );
 }

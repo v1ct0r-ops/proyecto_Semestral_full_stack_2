@@ -1,6 +1,7 @@
 // src/components/productos/ProductosPanel.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { obtener, guardar, usuarioActual } from "../../utils/storage";
+import { useAuth } from "../../context/AuthContext";
+import { obtenerProductos, productosAPI } from "../../services/apiService";
 
 // === Helpers ===
 const CLP = (n) =>
@@ -10,34 +11,35 @@ const CLP = (n) =>
 
 // === Hook de sesión/datos ===
 function useSessionData() {
-  const [user, setUser] = useState(null);
+  const { user, isAuthenticated } = useAuth();
   const [productos, setProductos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
+    if (!isAuthenticated || !user) {
       alert("Acceso restringido.");
-      window.location.href = "/index.html";
+      window.location.href = "/cliente/";
       return;
     }
-    setUser(u);
-    setProductos(Array.isArray(obtener("productos", [])) ? obtener("productos", []) : []);
-    setUsuarios(Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : []);
-    setPedidos(Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []);
-  }, []);
 
-  const kpis = useMemo(
-    () => ({
-      productos: productos.length,
-      usuarios: usuarios.length,
-      pendientes: pedidos.filter((p) => p.estado === "pendiente").length,
-    }),
-    [productos, usuarios, pedidos]
-  );
+      // Función que carga los productos desde la API
+      const loadData = async () => {
+        try {
+          // Cargar productos usando el endpoint público
+          const productosData = await obtenerProductos();
+          setProductos(Array.isArray(productosData) ? productosData : []);
+        } catch (error) {
+          // Si ocurre un error, dejar productos vacío
+          setProductos([]);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-  return { user, productos, kpis };
+    loadData();
+  }, [isAuthenticated, user]);
+
+  return { user, productos, loading };
 }
 
 // === Header ===
@@ -82,6 +84,22 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
 
 // === Menú lateral móvil ===
 function SideMenu({ open, onClose, isAdmin, onOpenAccount }) {
+  const { logout } = useAuth();
+
+  const handleLogout = async (e) => {
+      e.preventDefault();
+      try {
+        await logout();
+        onClose();
+        window.location.href = "/cliente/";
+      } catch (error) {
+        // Si ocurre un error al cerrar sesión, limpiar localStorage y redirigir
+        localStorage.clear();
+        onClose();
+        window.location.href = "/cliente/";
+      }
+  };
+
   return (
     <>
       <aside
@@ -113,18 +131,13 @@ function SideMenu({ open, onClose, isAdmin, onOpenAccount }) {
           >
             Mi cuenta
           </a>
-          <a href="../cliente/index.html" onClick={onClose}>Inicio</a>
-          <a href="../cliente/productos" onClick={onClose}>Productos</a>
+          <a href="/cliente/index.html" onClick={onClose}>Inicio</a>
+          <a href="/cliente/productos.html" onClick={onClose}>Productos</a>
           <a
-            href="/"
+            href="#"
             id="linkSalirMov"
             data-bind="1"
-            onClick={(e) => {
-              e.preventDefault();
-              localStorage.removeItem("sesion");
-              onClose();
-              window.location.href = "/index.html";
-            }}
+            onClick={handleLogout}
           >
             Salir
           </a>
@@ -141,9 +154,11 @@ function SideMenu({ open, onClose, isAdmin, onOpenAccount }) {
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
 function AccountPanel({ user, open, onClose }) {
+  const { logout } = useAuth();
+  
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
-  const codigo = user?.codigoReferido || "";
+  const codigo = user?.codigoReferido || `REF-${user?.run?.replace('-', '') || 'ADMIN'}`;
 
   const copyCode = async () => {
     try {
@@ -152,90 +167,128 @@ function AccountPanel({ user, open, onClose }) {
     } catch {}
   };
 
-  if (!open) return null;
+  const handleLogout = async () => {
+      try {
+        await logout();
+        window.location.href = "/cliente/";
+      } catch (error) {
+        // Si ocurre un error al cerrar sesión, limpiar localStorage y redirigir
+        localStorage.clear();
+        window.location.href = "/cliente/";
+      }
+    };
 
-  return (
-    <>
-      <aside
-        id="panelCuenta"
-        className="panel-cuenta panel-cuenta--abierto"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="panelCuentaTitulo"
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
-      >
-        <div className="panel-cuenta__cab">
-          <h3 id="panelCuentaTitulo">Mi cuenta</h3>
-          <button
-            id="btnCerrarCuenta"
-            className="panel-cuenta__cerrar"
-            aria-label="Cerrar"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
+    if (!open) return null;
 
-        <div className="panel-cuenta__contenido">
-          <div className="panel-cuenta__avatar">
-            <img src="/img/imgPerfil.png" alt="Foto de perfil" />
-          </div>
-
-          <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
-          <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
-
-          <div className="panel-cuenta__bloque">
-            <label><strong>Código de referido</strong></label>
-            <div className="panel-cuenta__ref">
-              <input readOnly value={codigo} />
-              <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
-            </div>
-            <small className="pista">Compartí este código para ganar puntos.</small>
-          </div>
-
-          <div className="panel-cuenta__bloque">
-            <p><strong>Puntos LevelUp:</strong> <span>{puntos}</span></p>
-            <p><strong>Nivel:</strong> <span>{nivel}</span></p>
-            <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
-          </div>
-
-          <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
+    // Fragmento para el panel de cuenta
+    return (
+      <>
+        <aside
+          id="panelCuenta"
+          className="panel-cuenta panel-cuenta--abierto"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="panelCuentaTitulo"
+          onKeyDown={(e) => e.key === "Escape" && onClose()}
+        >
+          <div className="panel-cuenta__cab">
+            <h3 id="panelCuentaTitulo">Mi cuenta</h3>
             <button
-              id="btnSalirCuenta"
-              className="btn"
-              onClick={() => {
-                localStorage.removeItem("sesion");
-                window.location.href = "/index.html";
-              }}
+              id="btnCerrarCuenta"
+              className="panel-cuenta__cerrar"
+              aria-label="Cerrar"
+              onClick={onClose}
             >
-              Salir
+              ✕
             </button>
           </div>
-        </div>
-      </aside>
 
-      <div id="cortinaCuenta" className="cortina" onClick={onClose} />
-    </>
-  );
+          <div className="panel-cuenta__contenido">
+            <div className="panel-cuenta__avatar">
+              <img src="/img/imgPerfil.png" alt="Foto de perfil" />
+            </div>
+
+            <p><strong>Nombre:</strong> {`${user?.nombre || user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "Administrador"}</p>
+            <p><strong>Correo:</strong> {user?.email || user?.correo || "—"}</p>
+            <p><strong>RUN:</strong> {user?.run || "—"}</p>
+            <p><strong>Tipo:</strong> <span style={{textTransform: 'capitalize'}}>{user?.tipo?.toLowerCase() || "Admin"}</span></p>
+            <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
+
+            <div className="panel-cuenta__bloque">
+              <label><strong>Código de referido</strong></label>
+              <div className="panel-cuenta__ref">
+                <input readOnly value={codigo} />
+                <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
+              </div>
+              <small className="pista">Compartí este código para ganar puntos.</small>
+            </div>
+
+            <div className="panel-cuenta__bloque">
+              <p><strong>Puntos LevelUp:</strong> <span>{puntos}</span></p>
+              <p><strong>Nivel:</strong> <span>{nivel}</span></p>
+              <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+            </div>
+
+            <div className="panel-cuenta__acciones">
+              <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
+              <button
+                id="btnSalirCuenta"
+                className="btn"
+                onClick={handleLogout}
+              >
+                Salir
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div id="cortinaCuenta" className="cortina" onClick={onClose} />
+      </>
+    );
 }
 
 // === Página: Productos ===
 export default function ProductosPanel() {
-  const { user, productos } = useSessionData();
+  const { user, productos, loading } = useSessionData();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const deleteDialogRef = useRef(null);
+  const successDialogRef = useRef(null);
   const [deleteCode, setDeleteCode] = useState("");
+  const [productosState, setProductosState] = useState([]);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+
+  // Sincronizar productos del hook con el estado local
+  useEffect(() => {
+    setProductosState(productos);
+  }, [productos]);
 
   useEffect(() => {
     document.body.classList.toggle("menu-abierto", menuOpen);
     return () => document.body.classList.remove("menu-abierto");
   }, [menuOpen]);
 
+  if (loading) {
+    return (
+      <div className="principal">
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          flexDirection: 'column'
+        }}>
+          <div>Cargando productos...</div>
+          <div style={{marginTop: 10, fontSize: '0.9em', color: '#666'}}>
+            Obteniendo datos del backend...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) return null;
-  const isAdmin = user.tipoUsuario === "admin";
+  const isAdmin = user.tipo === "ADMIN" || user.tipo === "admin" || user.tipoUsuario === "ADMIN" || user.tipoUsuario === "admin";
 
   return (
     <div className="principal">
@@ -297,8 +350,8 @@ export default function ProductosPanel() {
               </tr>
             </thead>
             <tbody id="tablaProductos">
-              {Array.isArray(productos) && productos.length > 0 ? (
-                productos.map((p) => (
+              {Array.isArray(productosState) && productosState.length > 0 ? (
+                productosState.map((p) => (
                   <tr key={p.codigo}>
                     <td>{p.codigo}</td>
                     <td>{p.nombre}</td>
@@ -362,34 +415,35 @@ export default function ProductosPanel() {
                 <button
                   className="btn peligro"
                   value="ok"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
                     if (!deleteCode) return;
 
-                    const lista = Array.isArray(obtener("productos", [])) ? obtener("productos", []) : [];
-                    const idx = lista.findIndex((x) => x.codigo === deleteCode);
-                    if (idx >= 0) {
-                      lista.splice(idx, 1);
-                      guardar("productos", lista);
-                    }
-
+                    try {
+                    // Llama a la API para eliminar el producto
+                    await productosAPI.delete(deleteCode);
+                    // Actualiza la lista local quitando el producto eliminado
+                    setProductosState(prev => prev.filter(p => p.codigo !== deleteCode));
                     deleteDialogRef.current?.close();
-                    // Refrescamos la vista para que desaparezca el producto
-                    window.location.reload();
+                    successDialogRef.current?.showModal();
+                  } catch (error) {
+                    // Si ocurre un error al eliminar, mostrar alerta
+                    alert('Error al eliminar el producto: ' + (error.message || 'Error desconocido'));
+                  }
                   }}
                 >
                   Estoy seguro
                 </button>
-                <button
-                  className="btn secundario"
-                  value="cancel"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    deleteDialogRef.current?.close();
-                  }}
-                >
-                  Cancelar
-                </button>
+        <button
+          value="cancel"
+          className="btn secundario"
+          onClick={(e) => {
+            e.preventDefault();
+            deleteDialogRef.current?.close();
+          }}
+        >
+          Cancelar
+        </button>
               </div>
             </form>
           </dialog>
@@ -400,6 +454,26 @@ export default function ProductosPanel() {
       <footer className="pie">
         <p>© 2025 Level-Up Gamer — Chile</p>
       </footer>
+
+          {/* Diálogo de éxito */}
+          <dialog ref={successDialogRef} className="modal">
+            <form method="dialog" className="formulario" style={{ minWidth: 320, maxWidth: 480 }}>
+              <h3>Éxito</h3>
+              <p>Producto eliminado correctamente.</p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
+                <button 
+                  className="btn primario" 
+                  value="ok"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    successDialogRef.current?.close();
+                  }}
+                >
+                  OK
+                </button>
+              </div>
+            </form>
+          </dialog>
 
       <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
     </div>

@@ -1,138 +1,81 @@
-# Proyecto Semestral — Level-Up Gamer
+# Level-Up Gamer — Panel de Administración
 
-## Descripción
-Panel de administración para la tienda web Level-Up Gamer. Permite gestionar productos, usuarios, pedidos, boletas y solicitudes de contacto desde una SPA desarrollada en React y Vite. El panel está orientado a administradores y vendedores, facilitando la gestión interna de la tienda, la visualización de reportes y la administración de boletas generadas automáticamente al despachar pedidos.
+Este proyecto es el panel de administración para la tienda Level-Up Gamer. Permite gestionar productos, usuarios, pedidos, boletas y reportes desde una aplicación web hecha con React y Vite.
 
-## Este repositorio contiene:
-- `admin-react/` — SPA de administración en React + Vite (panel de administración, boletas, pedidos, productos, usuarios, reportes, etc.)
-- `public/cliente/` — versiones estáticas del sitio cliente (productos, misCompras.html, etc.) que comparten estilos y plantillas
+## Tecnologías principales
+- React
+- Vite
+- JavaScript (ES6+)
+- HTML5 y CSS3
+- LocalStorage (persistencia en navegador)
+- @testing-library/react y @testing-library/jest-dom
+- Jasmine y Karma (testing)
+- Node.js y npm
 
-El objetivo es centralizar la gestión de la tienda y mantener la coherencia visual y funcional entre el panel de administración y la experiencia del cliente.
-
-
-## Objetivo
---------
-Aplicación de e-commerce didáctica donde:
-- Los clientes pueden navegar, añadir al carrito, pagar y ver sus compras ("Mis compras").
-- El admin gestiona productos, pedidos, usuarios y boletas a través del panel React.
-
-## Estructura relevante
---------------------
-- `admin-react/` — aplicación React (Vite)
-  - `src/` — código fuente React
-    - `components/` — paneles: `Boleta`, `Pedidos`, `Productos`, `Usuario`, `Dashboard`, etc.
-    - `site/` — scripts usados por las páginas estáticas del cliente (ej. `app.js` contiene la lógica cliente: carrito, boletas, impresión, descuentos).
-    - `utils/storage.js` — helpers para `localStorage` (obtener/guardar, usuarios, pedidos, boletas, etc.).
-  - `public/cliente/` — páginas cliente estáticas (ej. `misCompras.html`) con la plantilla de boleta/modales.
-  - `package.json` — scripts (dev, build, preview).
-
-# Estructura del Proyecto
+## Estructura del proyecto
 ```
-proyecto_Semestral_full_stack_2/
-│
-├── admin-react/                  # SPA de administración (React + Vite)
-│   ├── docs/                     # Documentación y cobertura de tests
-│   │   └── Documento de Cobertura de Testing - EP2.md
-│   ├── public/                   # Archivos públicos y cliente estático
-│   │   ├── cliente/              # Páginas estáticas del cliente (HTML)
-│   │   │   ├── blog-detalle-1.html
-│   │   │   ├── blog-detalle-2.html
-│   │   │   ├── blogs.html
-│   │   │   ├── contacto.html
-│   │   │   ├── index.html
-│   │   │   ├── login.html
-│   │   │   ├── misCompras.html
-│   │   │   ├── nosotros.html
-│   │   │   ├── perfil.html
-│   │   │   ├── producto.html
-│   │   │   ├── productos.html
-│   │   │   ├── README.md
-│   │   │   └── registro.html
-│   │   ├── img/                  # Imágenes públicas
-│   │   │   ├── 8-verthing-k_pBB5wJtaU-unsplash.jpg
-│   │   │   ├── ella-don-fK5Oomnc-Wk-unsplash (1).jpg
-│   │   │   ├── ella-don-K4kfIEhj4GM-unsplash.jpg
-│   │   │   ├── imgPerfil.png
-│   │   │   ├── LOGO.png
-│   │   │   ├── placeholder.jpg
-│   │   │   └── samsung-memory-XB4F9V5UleA-unsplash.jpg
-│   │   └── vite.svg
-│   ├── src/                      # Código fuente React y utilidades
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── index.css
-│   │   ├── main.jsx
-│   │   ├── assets/               # Recursos estáticos (ej. react.svg)
-│   │   ├── components/           # Componentes React (paneles)
-│   │   │   ├── Boleta/
-│   │   │   │   ├── Boleta.jsx
-│   │   │   │   └── DetalleBoleta.jsx
-│   │   │   ├── Dashboard/
-│   │   │   │   └── AdminPanel.jsx
-│   │   │   ├── Pedidos/
-│   │   │   │   ├── DetallePedidoPanel.jsx
-│   │   │   │   └── PedidosPanel.jsx
-│   │   │   ├── Productos/
-│   │   │   │   ├── EditarProductoPanel.jsx
-│   │   │   │   ├── NuevoProductoPanel.jsx
-│   │   │   │   ├── ProductosPanel.jsx
-│   │   │   │   ├── ProductosPocoStockPanel.jsx
-│   │   │   │   └── ReportesProductosPanel.jsx
-│   │   │   ├── ProtectedRoute.jsx
-│   │   │   ├── Reportes/
-│   │   │   │   └── ReportesPanel.jsx
-│   │   │   ├── Solicitud/
-│   │   │   │   ├── DetalleSolicitudPanel.jsx
-│   │   │   │   └── SolicitudesPanel.jsx
-│   │   │   └── Usuario/
-│   │   │       ├── EditarUsuarioPanel.jsx
-│   │   │       ├── HistorialUsuarioPanel.jsx
-│   │   │       ├── NuevoUsuarioPanel.jsx
-│   │   │       └── UsuariosPanel.jsx
-│   │   ├── css/                  # Hojas de estilo CSS
-│   │   │   ├── blogs.css
-│   │   │   ├── contactos.css
-│   │   │   ├── estilos.css
-│   │   │   └── nosotros.css
-│   │   ├── site/                 # Scripts para cliente estático
-│   │   │   ├── app.js
-│   │   │   ├── contacto.js
-│   │   │   ├── datos.js
-│   │   │   └── solicitud.js
-│   │   └── utils/                # Utilidades compartidas
-│   │       └── storage.js
-│   ├── test/                     # Tests unitarios y de integración
-│   │   ├── contacto.spec.js
-│   │   ├── DetallePedidoPanel.spec.js
-│   │   ├── DetallePedidoPanel.spec.jsx
-│   │   ├── EditarProductoPanel.spec.js
-│   │   ├── EditarProductoPanel.spec.jsx
-│   │   ├── NuevoProductoPanel.spec.js
-│   │   ├── NuevoProductoPanel.spec.jsx
-│   │   ├── panel-solicitudes.spec.js
-│   │   ├── panel-solicitudes.spec.jsx
-│   │   ├── PedidosPanel.spec.js
-│   │   ├── PedidosPanel.spec.jsx
-│   │   ├── ProductosPanelSmoke.spec.js
-│   │   ├── ProductosPanelSmoke.spec.jsx
-│   │   ├── ProductosPocoStockPanel.spec.js
-│   │   ├── ProductosPocoStockPanel.spec.jsx
-│   │   ├── ReportesPanel.spec.js
-│   │   ├── ReportesPanel.spec.jsx
-│   │   ├── sanity.spec.js
-│   │   └── stubs/
-│   │       └── storage.stub.js
-│   ├── .gitignore
-│   ├── eslint.config.js
-│   ├── index.html
-│   ├── karma.conf.cjs
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── README.md
-│   ├── vite.config.js
-│
-└── ...
+admin-react/
+├── docs/
+├── public/
+│   ├── cliente/
+│   ├── img/
+│   └── vite.svg
+├── src/
+│   ├── App.jsx
+│   ├── App.css
+│   ├── index.css
+│   ├── main.jsx
+│   ├── assets/
+│   ├── components/
+│   ├── css/
+│   ├── site/
+│   ├── utils/
+├── test/
+│   └── stubs/
+├── .gitignore
+├── eslint.config.js
+├── index.html
+├── karma.conf.cjs
+├── package.json
+├── package-lock.json
+├── README.md
+├── vite.config.js
 ```
+
+## Cómo ejecutar el proyecto
+
+Requisitos:
+- Node.js v16 o superior
+- npm
+
+Instalación y desarrollo:
+```
+cd admin-react
+npm install
+npm run dev
+```
+La aplicación se ejecuta por defecto en http://localhost:5173
+
+Para crear el build de producción:
+```
+npm run build
+# Opcional: npm run preview
+```
+
+## Testing
+
+Para ejecutar los tests:
+```
+npm run test:karma
+```
+
+## Notas importantes
+- Si sirves la SPA como archivos estáticos, usa HashRouter para evitar errores de rutas.
+- El cliente usa `<dialog>` para modales, asegúrate de probar en navegadores modernos.
+- Las páginas en `public/cliente/` pueden usarse como sitio estático y comparten estilos con el panel.
+
+---
+Desarrollado para el Proyecto Semestral Full-Stack Level-Up Gamer
 
 ## Principales comportamientos (boletas)
 -----------------------------------
@@ -212,3 +155,7 @@ Requisitos y comportamientos a considerar
 - Ejecutar `npm install` en `admin-react/` para instalar dependencias
 - Usar `npm run dev` para entorno de desarrollo (Vite)
 - Usar `npm run test:karma` para correr los tests unitarios y de integración
+
+## Repositorio y soporte
+- Repositorio: https://github.com/v1ct0r-ops/proyecto_Semestral_full_stack_2.git
+- Issues: https://github.com/v1ct0r-ops/proyecto_Semestral_full_stack_2/issues

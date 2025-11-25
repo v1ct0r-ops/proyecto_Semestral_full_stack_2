@@ -1,6 +1,7 @@
 // src/components/productos/ProductosPocoStockPanel.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { obtener, usuarioActual } from "../../utils/storage";
+import { useAuth } from "../../context/AuthContext";
+import { obtenerProductos, productosAPI } from "../../services/apiService";
 
 // Helper CLP (o usa el tuyo global)
 const CLP = (n) =>
@@ -89,9 +90,8 @@ function SideMenu({ open, onClose, isAdmin, onOpenAccount }) {
             data-bind="1"
             onClick={(e) => {
               e.preventDefault();
-              localStorage.removeItem("sesion");
+              logout();
               onClose();
-              window.location.href = "/index.html";
             }}
           >
             Salir
@@ -108,7 +108,7 @@ function SideMenu({ open, onClose, isAdmin, onOpenAccount }) {
 // === Panel de cuenta ===
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
-function AccountPanel({ user, open, onClose }) {
+function AccountPanel({ user, open, onClose, logout }) {
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
   const codigo = user?.codigoReferido || "";
@@ -173,10 +173,7 @@ function AccountPanel({ user, open, onClose }) {
             <button
               id="btnSalirCuenta"
               className="btn"
-              onClick={() => {
-                localStorage.removeItem("sesion");
-                window.location.href = "/index.html";
-              }}
+              onClick={logout}
             >
               Salir
             </button>
@@ -192,23 +189,31 @@ function AccountPanel({ user, open, onClose }) {
 // ===== Página: Productos con poco stock =====
 export default function ProductosPocoStockPanel() {
   // Hooks SIEMPRE al tope
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const [productos, setProductos] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
   // Carga de datos
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
+    if (!user) {
       alert("Acceso restringido.");
       window.location.href = "/index.html";
       return;
     }
-    setUser(u);
-    const prods = Array.isArray(obtener("productos", [])) ? obtener("productos", []) : [];
-    setProductos(prods);
-  }, []);
+    
+    const cargarProductos = async () => {
+      try {
+        const productosData = await obtenerProductos();
+        setProductos(productosData);
+      } catch (error) {
+        // Si ocurre un error al cargar los productos, se deja la lista vacía
+        setProductos([]);
+      }
+    };
+    
+    cargarProductos();
+  }, [user]);
 
   // Derivado: lista de críticos ordenada por stock asc
   const listaCriticos = useMemo(() => {
@@ -299,7 +304,7 @@ export default function ProductosPocoStockPanel() {
         <p>© 2025 Level-Up Gamer — Chile</p>
       </footer>
 
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} logout={logout} />
     </div>
   );
 }

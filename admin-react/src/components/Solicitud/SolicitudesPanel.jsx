@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { obtener, guardar, usuarioActual } from "../../utils/storage";
+import { obtener, usuarioActual } from "../../utils/storage";
+import { solicitudesAPI } from "../../services/apiService";
 
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
@@ -112,7 +113,6 @@ function AccountPanel({ user, open, onClose }) {
     } catch {}
   };
 
-  // Si está cerrado, no se renderiza
   if (!open) return null;
 
   return (
@@ -182,27 +182,7 @@ function AccountPanel({ user, open, onClose }) {
   );
 }
 
-// --- Utils ---
-const formatearFechaFlexible = (s) => {
-  // Preferimos ISO si existe
-  const iso = s.fecha || s.createdAt || s.creado || s.fechaSolicitud;
-  if (iso) {
-    const d = new Date(iso);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      const hh = String(d.getHours()).padStart(2, "0");
-      const mi = String(d.getMinutes()).padStart(2, "0");
-      return `${dd}-${mm}-${yyyy} / ${hh}:${mi}`;
-    }
-  }
-  // Fallback: usa lo que guardaba contacto.js originalmente
-  const f = s.fechaLocal || s.fecha || "—";
-  const h = (s.hora || "").slice(0,5);
-  return h ? `${f} / ${h}` : f;
-};
-
+// --- Helpers ---
 const colorEstado = (estado) => {
   const e = String(estado || "").toLowerCase();
   if (e === "completado" || e === "atendida" || e === "resuelta") return "green";
@@ -211,47 +191,73 @@ const colorEstado = (estado) => {
   return "inherit";
 };
 
-// Intentamos ser tolerantes con el esquema
-const getTitulo = (s) => s.titulo || s.asunto || s.subject || `Solicitud ${s.id ?? ""}`;
-const getResumen = (s) => s.resumen || s.descripcion || s.mensaje || s.detalle || "";
+const getTitulo = (s) =>
+  s.titulo || s.asunto || s.subject || `Solicitud ${s.id ?? ""}`;
+const getResumen = (s) => s.descripcion || s.resumen || s.mensaje || s.detalle || "";
 const getEstado = (s) => s.estado || s.status || "pendiente";
-const getFecha = (s) => s.fecha || s.createdAt || s.creado || s.fechaSolicitud || null;
 
 export default function SolicitudesPanel() {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [filtro, setFiltro] = useState(""); // "", "pendiente", "completado"
-  const solicitudes = useMemo(
-    () => (Array.isArray(obtener("solicitudes", [])) ? obtener("solicitudes", []) : []),
-    []
-  );
+  const [filtro, setFiltro] = useState("");
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Cargar usuario + solicitudes desde backend
   useEffect(() => {
-     const u = usuarioActual();
-     if (!u) {
-       alert("Acceso restringido.");
-       window.location.href = "/index.html";
-       return;
-     }
-     setUser(u);
-   }, []);
+    const load = async () => {
+      try {
+        const u = await usuarioActual();
+        if (!u) {
+          alert("Acceso restringido.");
+          window.location.href = "/index.html";
+          return;
+        }
+        setUser(u);
 
-  const isAdmin = (user?.tipoUsuario === "admin");
+        // 👇 Backend
+        const data = await solicitudesAPI.getAll();
+        setSolicitudes(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setError(err.message || "Error cargando solicitudes");
+
+        // Fallback: localStorage "solicitudes"
+        const local = Array.isArray(obtener("solicitudes", []))
+          ? obtener("solicitudes", [])
+          : [];
+        setSolicitudes(local);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  // Normalizar tipo para detectar ADMIN aunque venga en mayúsculas
+  const tipo = (user?.tipoUsuario ?? user?.tipo ?? "")
+    .toString()
+    .trim()
+    .toUpperCase();
+  const isAdmin = tipo === "ADMIN";
 
   const dataFiltrada = useMemo(() => {
     if (!filtro) return solicitudes;
-    return solicitudes.filter((s) => String(getEstado(s)).toLowerCase() === filtro);
+    return solicitudes.filter(
+      (s) => String(getEstado(s)).toLowerCase() === filtro
+    );
   }, [solicitudes, filtro]);
 
   return (
-     <div className="principal">
+    <div className="principal">
       {!user ? (
-        // Puedes mostrar un loader/placeholder aquí si quieres
-        <div style={{ padding: 16 }}><p className="info">Cargando…</p></div>
+        <div style={{ padding: 16 }}>
+          <p className="info">Cargando…</p>
+        </div>
       ) : (
-         <>
-          {/* Encabezado mínimo; puedes reutilizar tu Header/SideMenu si lo prefieres */}
+        <>
           <Header
             isMenuOpen={menuOpen}
             onOpenAccount={() => setAccountOpen(true)}
@@ -260,7 +266,6 @@ export default function SolicitudesPanel() {
           <SideMenu
             open={menuOpen}
             onClose={() => setMenuOpen(false)}
-            isAdmin={isAdmin}
             onOpenAccount={() => setAccountOpen(true)}
           />
 
@@ -275,123 +280,143 @@ export default function SolicitudesPanel() {
               <a href="/admin/reportes">Reportes</a>
             </aside>
 
-             <div className="panel-solicitud">
-               <h1>Solicitudes</h1>
+            <div className="panel-solicitud">
+              <h1>Solicitudes</h1>
 
-               <div className="filtros" style={{ marginBottom: 12 }}>
-                 <select
-                   id="filtroSoliciutudes"
-                   value={filtro}
-                   onChange={(e) => setFiltro(e.target.value)}
-                 >
-                   <option value="">Todos</option>
-                   <option value="pendiente">pendiente</option>
-                   <option value="completado">completado</option>
-                 </select>
-               </div>
+              <div className="filtros" style={{ marginBottom: 12 }}>
+                <select
+                  id="filtroSoliciutudes"
+                  value={filtro}
+                  onChange={(e) => setFiltro(e.target.value)}
+                >
+                  <option value="">Todos</option>
+                  <option value="pendiente">pendiente</option>
+                  <option value="completado">completado</option>
+                </select>
+              </div>
 
-               <div id="listaSolicitud" className="tarjeta-solicitud tarjetas">
-                 {dataFiltrada.length === 0 ? (
-                   <article className="tarjeta">
-                     <div className="contenido">
-                       <p className="info" style={{ margin: 0 }}>No hay solicitudes.</p>
-                     </div>
-                   </article>
-                 ) : (
-                   dataFiltrada.map((s) => (
-                     <article className="tarjeta" key={s.id || s.codigo || Math.random()}>
+              {loading ? (
+                <p className="info">🔄 Cargando solicitudes...</p>
+              ) : error && solicitudes.length === 0 ? (
+                <p className="info" style={{ color: "#dc2626" }}>
+                  ❌ Error: {error}
+                </p>
+              ) : (
+                <div id="listaSolicitud" className="tarjeta-solicitud tarjetas">
+                  {dataFiltrada.length === 0 ? (
+                    <article className="tarjeta">
                       <div className="contenido">
-                        <h3>{s.titulo || s.asunto || s.subject || `Solicitud ${s.id ?? ""}`}</h3>
-
-                        <div style={{ marginBottom: 6 }}>
-                          {/* Nombre y correo en línea pero que se quiebren en pantallas pequeñas */}
-                          {(s.nombre || s.correo) && (
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap", // permite que se acomoden en varias líneas
-                                gap: "6px 12px",  // separación entre nombre y correo
-                                fontSize: 17,
-                                marginBottom: 4,
-                              }}
-                            >
-                              {s.nombre && (
-                                <span>
-                                  <strong>Nombre:</strong> {s.nombre}
-                                </span>
-                              )}
-                              {s.correo && (
-                                <span>
-                                  <strong>Correo:</strong> {s.correo}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Estado y fecha con separación */}
-                          <small style={{ display: "block", paddingTop: 4 }}>
-                            <span
-                              style={{
-                                color: (() => {
-                                  const e = String((s.estado || s.status || "").toLowerCase());
-                                  if (e === "completado" || e === "atendida" || e === "resuelta")
-                                    return "green";
-                                  if (e === "pendiente") return "orange";
-                                  if (e === "cancelada" || e === "cancelado") return "red";
-                                  return "inherit";
-                                })(),
-                                fontWeight: 600,
-                                marginRight: 8, // separación del texto de la fecha
-                              }}
-                            >
-                              {String(s.estado || s.status || "pendiente").toUpperCase()}
-                            </span>
-                            ·{" "}
-                            {(() => {
-                              const iso = s.fecha || s.createdAt || s.creado || s.fechaSolicitud;
-                              if (!iso) return "—";
-                              const d = new Date(iso);
-                              const dd = String(d.getDate()).padStart(2, "0");
-                              const mm = String(d.getMonth() + 1).padStart(2, "0");
-                              const yyyy = d.getFullYear();
-                              const hh = String(d.getHours()).padStart(2, "0");
-                              const mi = String(d.getMinutes()).padStart(2, "0");
-                              return `${dd}-${mm}-${yyyy} / ${hh}:${mi}`;
-                            })()}
-                          </small>
-                        </div>
-
-                        {(s.descripcion ?? s.resumen ?? s.mensaje ?? s.detalle) && (
-                          <p style={{ marginTop: 4 }}>
-                            <strong>Mensaje:</strong>{" "}
-                            {s.descripcion ?? s.resumen ?? s.mensaje ?? s.detalle}
-                          </p>
-                        )}
-
-                        <div className="acciones" style={{ marginTop: 8 }}>
-                          <a
-                            className="btn secundario"
-                            href={`/admin/solicitud/${encodeURIComponent(s.id || s.codigo || "")}`}
-                          >
-                            Ver detalle
-                          </a>
-                        </div>
+                        <p className="info" style={{ margin: 0 }}>
+                          No hay solicitudes.
+                        </p>
                       </div>
                     </article>
+                  ) : (
+                    dataFiltrada.map((s) => (
+                      <article
+                        className="tarjeta"
+                        key={s.id || s.codigo || Math.random()}
+                      >
+                        <div className="contenido">
+                          <h3>{getTitulo(s)}</h3>
 
-                   ))
-                 )}
-               </div>
-             </div>
-           </section>
+                          <div style={{ marginBottom: 6 }}>
+                            {(s.nombre || s.correo) && (
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: "6px 12px",
+                                  fontSize: 17,
+                                  marginBottom: 4,
+                                }}
+                              >
+                                {s.nombre && (
+                                  <span>
+                                    <strong>Nombre:</strong> {s.nombre}
+                                  </span>
+                                )}
+                                {s.correo && (
+                                  <span>
+                                    <strong>Correo:</strong> {s.correo}
+                                  </span>
+                                )}
+                              </div>
+                            )}
 
-           <footer className="pie">
-        <p>© 2025 Level-Up Gamer — Chile</p>
-      </footer>
+                            <small style={{ display: "block", paddingTop: 4 }}>
+                              <span
+                                style={{
+                                  color: colorEstado(getEstado(s)),
+                                  fontWeight: 600,
+                                  marginRight: 8,
+                                }}
+                              >
+                                {String(getEstado(s)).toUpperCase()}
+                              </span>
+                              ·{" "}
+                              {(() => {
+                                const iso =
+                                  s.fecha ||
+                                  s.createdAt ||
+                                  s.creado ||
+                                  s.fechaSolicitud;
+                                if (!iso) return "—";
+                                const d = new Date(iso);
+                                const dd = String(d.getDate()).padStart(2, "0");
+                                const mm = String(
+                                  d.getMonth() + 1
+                                ).padStart(2, "0");
+                                const yyyy = d.getFullYear();
+                                const hh = String(d.getHours()).padStart(
+                                  2,
+                                  "0"
+                                );
+                                const mi = String(d.getMinutes()).padStart(
+                                  2,
+                                  "0"
+                                );
+                                return `${dd}-${mm}-${yyyy} / ${hh}:${mi}`;
+                              })()}
+                            </small>
+                          </div>
 
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
-         </>
+                          {getResumen(s) && (
+                            <p style={{ marginTop: 4 }}>
+                              <strong>Mensaje:</strong> {getResumen(s)}
+                            </p>
+                          )}
+
+                          <div className="acciones" style={{ marginTop: 8 }}>
+                            <a
+                              className="btn secundario"
+                              href={`/admin/solicitud/${encodeURIComponent(
+                                s.id || s.codigo || ""
+                              )}`}
+                            >
+                              Ver detalle
+                            </a>
+                          </div>
+                        </div>
+                      </article>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <footer className="pie">
+            <p>© 2025 Level-Up Gamer — Chile</p>
+          </footer>
+
+          <AccountPanel
+            user={user}
+            open={accountOpen}
+            onClose={() => setAccountOpen(false)}
+          />
+        </>
       )}
-     </div>
+    </div>
   );
 }

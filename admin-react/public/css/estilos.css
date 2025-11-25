@@ -1,7 +1,5 @@
-/* Importamos las fuentes que vamos a usar en la página para que los textos se vean bonitos */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap');
 
-/* Aquí definimos los colores principales para todo el sitio, así es más fácil cambiar el diseño después */
 :root{
   --fondo:#000000;
   --texto:#FFFFFF;
@@ -684,6 +682,13 @@ input:focus,select:focus,textarea:focus{
   margin:0
 }
 
+.carrito-vacio {
+  text-align: center;
+  padding: 20px;
+  color: var(--texto-sec);
+  font-style: italic;
+}
+
 .item-carrito{
   display:flex;
   align-items:center;
@@ -745,4 +750,127 @@ input:focus,select:focus,textarea:focus{
 
 .no-scroll {
   overflow: hidden !important;
+}
+
+/* ========================================
+   ESTILOS PARA MIS COMPRAS
+======================================== */
+
+.pedidos-lista {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.pedido-card {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.pedido-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: var(--gris);
+  border-bottom: 1px solid var(--borde);
+}
+
+.pedido-info h3 {
+  margin: 0;
+  color: var(--azul);
+  font-size: 1.2rem;
+}
+
+.pedido-info .fecha {
+  margin: 5px 0 0 0;
+  color: var(--texto-sec);
+  font-size: 0.9rem;
+}
+
+.pedido-estado {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.estado-pendiente {
+  background: #FFA500;
+  color: #000;
+}
+
+.estado-despachado {
+  background: var(--verde);
+  color: #000;
+}
+
+.estado-cancelado {
+  background: #FF4444;
+  color: #FFF;
+}
+
+.pedido-detalles {
+  padding: 20px;
+}
+
+.direccion {
+  margin-bottom: 15px;
+  color: var(--texto);
+}
+
+.totales {
+  margin-bottom: 15px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  color: var(--texto);
+}
+
+.total-row.descuento {
+  color: var(--verde);
+}
+
+.total-final {
+  border-top: 1px solid var(--borde);
+  padding-top: 10px;
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+
+.pedido-acciones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pedido-acciones .btn {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .pedidos-lista {
+    padding: 10px;
+  }
+  
+  .pedido-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .pedido-estado {
+    align-self: flex-end;
+  }
+  
+  .pedido-acciones {
+    flex-direction: column;
+  }
 }

@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { obtener, guardar, usuarioActual } from "../../utils/storage";
+import { useParams } from "react-router-dom";
+import { usuarioActual } from "../../utils/storage";
+import { solicitudesAPI } from "../../services/apiService";
 
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
+// ================== HEADER ==================
 function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
   return (
     <header className="encabezado">
@@ -42,6 +45,7 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
   );
 }
 
+// ================== SIDE MENU ==================
 function SideMenu({ open, onClose, onOpenAccount }) {
   return (
     <>
@@ -63,7 +67,7 @@ function SideMenu({ open, onClose, onOpenAccount }) {
         {/* SOLO: Mi cuenta, Inicio, Productos y Salir */}
         <nav id="menuLista" className="menu-lista" data-clonado="1">
           <a
-            href="#"
+            href="#" 
             id="linkMiCuentaMov"
             data-bind="1"
             onClick={(e) => {
@@ -86,7 +90,7 @@ function SideMenu({ open, onClose, onOpenAccount }) {
               e.preventDefault();
               localStorage.removeItem("sesion");
               onClose();
-              window.location.href = "/cliente/index.html"; // ← ruta absoluta
+              window.location.href = "/cliente/index.html";
             }}
           >
             Salir
@@ -100,6 +104,7 @@ function SideMenu({ open, onClose, onOpenAccount }) {
   );
 }
 
+// ================== ACCOUNT PANEL ==================
 function AccountPanel({ user, open, onClose }) {
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
@@ -112,7 +117,6 @@ function AccountPanel({ user, open, onClose }) {
     } catch {}
   };
 
-  // Si está cerrado, no se renderiza
   if (!open) return null;
 
   return (
@@ -142,27 +146,52 @@ function AccountPanel({ user, open, onClose }) {
             <img src="/img/imgPerfil.png" alt="Foto de perfil" />
           </div>
 
-          <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
-          <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
+          <p>
+            <strong>Nombre:</strong>{" "}
+            {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}
+          </p>
+          <p>
+            <strong>Correo:</strong> {user?.correo || "—"}
+          </p>
+          <a className="btn secundario" href="/cliente/perfil.html">
+            Editar Perfil
+          </a>
 
           <div className="panel-cuenta__bloque">
-            <label><strong>Código de referido</strong></label>
+            <label>
+              <strong>Código de referido</strong>
+            </label>
             <div className="panel-cuenta__ref">
               <input readOnly value={codigo} />
-              <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
+              <button
+                className="btn secundario"
+                type="button"
+                onClick={copyCode}
+              >
+                Copiar
+              </button>
             </div>
-            <small className="pista">Compartí este código para ganar puntos.</small>
+            <small className="pista">
+              Compartí este código para ganar puntos.
+            </small>
           </div>
 
           <div className="panel-cuenta__bloque">
-            <p><strong>Puntos LevelUp:</strong> <span>{puntos}</span></p>
-            <p><strong>Nivel:</strong> <span>{nivel}</span></p>
-            <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+            <p>
+              <strong>Puntos LevelUp:</strong> <span>{puntos}</span>
+            </p>
+            <p>
+              <strong>Nivel:</strong> <span>{nivel}</span>
+            </p>
+            <small className="pista">
+              Bronce: 0–199 · Plata: 200–499 · Oro: 500+
+            </small>
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
+            <a className="btn secundario" href="/cliente/misCompras.html">
+              Mis compras
+            </a>
             <button
               id="btnSalirCuenta"
               className="btn"
@@ -182,10 +211,11 @@ function AccountPanel({ user, open, onClose }) {
   );
 }
 
-// --- Utils ---
+// ================== UTILS ==================
 const formatearFecha = (iso) => {
   if (!iso) return "—";
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = d.getFullYear();
@@ -202,97 +232,136 @@ const colorEstado = (estado) => {
   return "inherit";
 };
 
-const getTitulo = (s) => s.titulo || s.asunto || s.subject || `Solicitud ${s.id ?? ""}`;
-const getResumen = (s) => s.resumen || s.descripcion || s.mensaje || s.detalle || "";
+const getTitulo = (s) =>
+  s.titulo || s.asunto || s.subject || `Solicitud ${s.id ?? ""}`;
+const getResumen = (s) =>
+  s.resumen || s.descripcion || s.mensaje || s.detalle || "";
 const getEstado = (s) => s.estado || s.status || "pendiente";
-const getFecha = (s) => s.fecha || s.createdAt || s.creado || s.fechaSolicitud || null;
+const getFecha = (s) =>
+  s.fecha || s.createdAt || s.creado || s.fechaSolicitud || null;
 
+// ================== COMPONENTE PRINCIPAL ==================
 export default function DetalleSolicitudPanel({ idParam }) {
+  const { id: routeId } = useParams();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [solicitud, setSolicitud] = useState(null);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // captar el id desde la URL si no viene por prop
+  // id de la URL o prop
   const idFromPath = useMemo(() => {
     if (idParam) return idParam;
+    if (routeId) return routeId;
     const parts = (window?.location?.pathname || "").split("/");
     return decodeURIComponent(parts[parts.length - 1] || "");
-  }, [idParam]);
+  }, [idParam, routeId]);
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const u = await usuarioActual();
+        if (!u) {
+          alert("Acceso restringido.");
+          window.location.href = "/index.html";
+          return;
+        }
+        setUser(u);
 
-useEffect(() => {
-  const u = usuarioActual();
-  if (!u) {
-    alert("Acceso restringido.");
-    window.location.href = "/index.html";
-    return;
-  }
-  setUser(u);
+        // detectar admin robusto (ADMIN/admin)
+        const tipo = (u.tipoUsuario ?? u.tipo ?? "")
+          .toString()
+          .trim()
+          .toUpperCase();
+        setIsAdmin(tipo === "ADMIN");
 
-  // ejemplo: si el usuario tiene rol 'admin'
-  setIsAdmin(u.tipoUsuario === "admin");
+        if (!idFromPath) {
+          setError("ID de solicitud inválido");
+          setLoading(false);
+          return;
+        }
 
-  const todas = obtener("solicitudes", []);
-  const encontrada =
-    todas.find((x) => String(x.id) === String(idFromPath)) ||
-    todas.find((x) => String(x.codigo) === String(idFromPath));
-  setSolicitud(encontrada || null);
-}, [idFromPath]);
+        // 👇 Cargar solicitud desde backend
+        const data = await solicitudesAPI.getById(idFromPath);
+        setSolicitud(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message || "Error cargando solicitud");
+        setSolicitud(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    load();
+  }, [idFromPath]);
 
-  if (!user) return null;
-
-  const marcarAtendida = () => {
-    const todas = Array.isArray(obtener("solicitudes", [])) ? obtener("solicitudes", []) : [];
-    const idx = todas.findIndex(
-      (x) => String(x.id) === String(idFromPath) || String(x.codigo) === String(idFromPath)
-    );
-    if (idx >= 0) {
-      // normalizamos como "completado" (coincide con el filtro del listado)
-      todas[idx] = { ...todas[idx], estado: "completado", actualizado: new Date().toISOString() };
-      guardar("solicitudes", todas);
-      setSolicitud(todas[idx]);
+  const marcarAtendida = async () => {
+    if (!solicitud) return;
+    try {
+      const actualizada = await solicitudesAPI.updateEstado(
+        solicitud.id,
+        "completado"
+      );
+      setSolicitud(actualizada);
+      alert("Solicitud marcada como atendida/completada.");
+    } catch (err) {
+      alert("No se pudo actualizar el estado de la solicitud.");
     }
   };
 
+  if (!user) {
+    return (
+      <div className="principal">
+        <div style={{ padding: 16 }}>
+          <p className="info">Cargando…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const titulo = solicitud ? getTitulo(solicitud) : "Solicitud";
+
   return (
-     <div className="principal">
-      {!user ? (
-        // Puedes mostrar un loader/placeholder aquí si quieres
-        <div style={{ padding: 16 }}><p className="info">Cargando…</p></div>
-      ) : (
-         <>
-          {/* Encabezado mínimo; puedes reutilizar tu Header/SideMenu si lo prefieres */}
-          <Header
-            isMenuOpen={menuOpen}
-            onOpenAccount={() => setAccountOpen(true)}
-            onToggleMenu={() => setMenuOpen((v) => !v)}
-          />
+    <div className="principal">
+      <Header
+        isMenuOpen={menuOpen}
+        onOpenAccount={() => setAccountOpen(true)}
+        onToggleMenu={() => setMenuOpen((v) => !v)}
+      />
 
-          <SideMenu
-            open={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            onOpenAccount={() => setAccountOpen(true)}
-          />
+      <SideMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onOpenAccount={() => setAccountOpen(true)}
+      />
+
       <section className="admin">
-          <aside className="menu-admin">
-            <a href="/admin">Inicio</a>
-            <a href="/admin/productos">Productos</a>
-            <a href="/admin/usuarios">Usuarios</a>
-            <a href="/admin/pedidos">Pedidos</a>
-            <a href="/admin/solicitud" className="activo">Solicitudes</a>
-            <a href="/admin/boleta">Boletas</a>
-            <a href="/admin/reportes">Reportes</a>
-          </aside>
-
+        <aside className="menu-admin">
+          <a href="/admin">Inicio</a>
+          <a href="/admin/productos">Productos</a>
+          {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
+          <a href="/admin/pedidos">Pedidos</a>
+          <a href="/admin/solicitud" className="activo">Solicitudes</a>
+          <a href="/admin/boleta">Boletas</a>
+          <a href="/admin/reportes">Reportes</a>
+        </aside>
 
         <div className="panel">
-          <h1 id="tituloSolicitud">{solicitud ? getTitulo(solicitud) : "Solicitud"}</h1>
+          <h1 id="tituloSolicitud">{titulo}</h1>
 
-          {!solicitud ? (
-            <p className="info">No se encontró la solicitud (ID: {idFromPath}).</p>
+          {loading ? (
+            <p className="info">🔄 Cargando solicitud desde el backend...</p>
+          ) : error ? (
+            <p className="info" style={{ color: "#dc2626" }}>
+              ❌ Error: {error} (ID: {idFromPath})
+            </p>
+          ) : !solicitud ? (
+            <p className="info">
+              No se encontró la solicitud (ID: {idFromPath}).
+            </p>
           ) : (
             <>
               <div id="detalleSolicitud">
@@ -300,11 +369,17 @@ useEffect(() => {
                   <div className="contenido">
                     <p style={{ margin: 0 }}>
                       <strong>Estado: </strong>
-                      <span style={{ color: colorEstado(getEstado(solicitud)), fontWeight: 600 }}>
+                      <span
+                        style={{
+                          color: colorEstado(getEstado(solicitud)),
+                          fontWeight: 600,
+                        }}
+                      >
                         {String(getEstado(solicitud)).toUpperCase()}
                       </span>
                       {" · "}
-                      <strong>Fecha:</strong> {formatearFecha(getFecha(solicitud))}
+                      <strong>Fecha:</strong>{" "}
+                      {formatearFecha(getFecha(solicitud))}
                     </p>
 
                     {getResumen(solicitud) && (
@@ -313,31 +388,48 @@ useEffect(() => {
                       </p>
                     )}
 
-                    {/* Campos adicionales si existen */}
-                    {solicitud.nombre && <p><strong>Nombre:</strong> {solicitud.nombre}</p>}
-                    {solicitud.correo && <p><strong>Correo:</strong> {solicitud.correo}</p>}
-                    {solicitud.run && <p><strong>RUN:</strong> {solicitud.run}</p>}
+                    {solicitud.nombre && (
+                      <p>
+                        <strong>Nombre:</strong> {solicitud.nombre}
+                      </p>
+                    )}
+                    {solicitud.correo && (
+                      <p>
+                        <strong>Correo:</strong> {solicitud.correo}
+                      </p>
+                    )}
+                    {solicitud.run && (
+                      <p>
+                        <strong>RUN:</strong> {solicitud.run}
+                      </p>
+                    )}
                   </div>
                 </article>
               </div>
 
               <div style={{ marginTop: 12 }}>
-                <button id="btnMarcarAtendida" className="btn exito" onClick={marcarAtendida}>
+                <button
+                  id="btnMarcarAtendida"
+                  className="btn exito"
+                  onClick={marcarAtendida}
+                >
                   Marcar como atendida
-                 </button>
-               </div>
-             </>
-           )}
-         </div>
-       </section>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
-       <footer className="pie">
-         <p>© 2025 Level-Up Gamer — Chile</p>
-       </footer>
+      <footer className="pie">
+        <p>© 2025 Level-Up Gamer — Chile</p>
+      </footer>
 
-       <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
-       </>
-       )}
-      </div>
-   );
+      <AccountPanel
+        user={user}
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
+    </div>
+  );
 }

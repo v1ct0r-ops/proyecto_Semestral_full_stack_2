@@ -1,5 +1,7 @@
+// src/components/usuarios/NuevoUsuarioPanel.jsx
 import React, { useEffect, useState } from "react";
-import { obtener, guardar, usuarioActual } from "../../utils/storage";
+import { useAuth } from "../../context/AuthContext";
+import { usuariosAPI } from "../../services/apiService";
 
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
@@ -10,7 +12,6 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
         <img src="/img/LOGO.png" alt="Logo" className="logoBase" />
       </a>
 
-      {/* Botón menú móvil */}
       <button
         id="btnMenu"
         type="button"
@@ -24,7 +25,6 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
         <span className="icono-cerrar" aria-hidden="true">✕</span>
       </button>
 
-      {/* NAV superior */}
       <nav className="navegacion">
         <a href="/cliente/index.html">Inicio</a>
         <a href="/cliente/productos.html">Productos</a>
@@ -43,6 +43,22 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
 }
 
 function SideMenu({ open, onClose, onOpenAccount }) {
+  const { logout } = useAuth();
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await logout();
+      onClose();
+      window.location.href = "/cliente/";
+    } catch (error) {
+      // Si ocurre un error durante logout, limpiamos el storage y redirigimos igual
+      localStorage.clear();
+      onClose();
+      window.location.href = "/cliente/";
+    }
+  };
+
   return (
     <>
       <aside
@@ -55,12 +71,12 @@ function SideMenu({ open, onClose, onOpenAccount }) {
         <div className="menu-cabecera">
           <a className="logo" href="/admin">
             <span className="marca">
-              LEVEL<span className="up">UP</span> <span className="gamer">GAMER</span>
+              LEVEL<span className="up">UP</span>{" "}
+              <span className="gamer">GAMER</span>
             </span>
           </a>
         </div>
 
-        {/* SOLO: Mi cuenta, Inicio, Productos y Salir */}
         <nav id="menuLista" className="menu-lista" data-clonado="1">
           <a
             href="#"
@@ -75,32 +91,31 @@ function SideMenu({ open, onClose, onOpenAccount }) {
             Mi cuenta
           </a>
 
-          <a href="/cliente/index.html" onClick={onClose}>Inicio</a>
-          <a href="/cliente/productos.html" onClick={onClose}>Productos</a>
+          <a href="/cliente/index.html" onClick={onClose}>
+            Inicio
+          </a>
+          <a href="/cliente/productos.html" onClick={onClose}>
+            Productos
+          </a>
 
           <a
             href="/cliente/index.html"
             id="linkSalirMov"
             data-bind="1"
-            onClick={(e) => {
-              e.preventDefault();
-              localStorage.removeItem("sesion");
-              onClose();
-              window.location.href = "../index.html";
-            }}
+            onClick={handleLogout}
           >
             Salir
           </a>
         </nav>
       </aside>
 
-      {/* Cortina */}
       <div id="cortina" className="cortina" hidden={!open} onClick={onClose} />
     </>
   );
 }
 
 function AccountPanel({ user, open, onClose }) {
+  const { logout } = useAuth();
   const puntos = user?.puntosLevelUp ?? 0;
   const nivel = calcularNivel(puntos);
   const codigo = user?.codigoReferido || "";
@@ -112,7 +127,18 @@ function AccountPanel({ user, open, onClose }) {
     } catch {}
   };
 
-  // Si está cerrado, no se renderiza
+  // Cierra sesión y redirige al usuario al home de cliente
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      // Si ocurre un error durante logout, limpiamos el storage
+      localStorage.clear();
+    } finally {
+      window.location.href = "/cliente/";
+    }
+  };
+
   if (!open) return null;
 
   return (
@@ -142,34 +168,56 @@ function AccountPanel({ user, open, onClose }) {
             <img src="/img/imgPerfil.png" alt="Foto de perfil" />
           </div>
 
-          <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
-          <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
+          <p>
+            <strong>Nombre:</strong>{" "}
+            {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}
+          </p>
+          <p>
+            <strong>Correo:</strong> {user?.correo || user?.email || "—"}
+          </p>
+          <a className="btn secundario" href="/cliente/perfil.html">
+            Editar Perfil
+          </a>
 
           <div className="panel-cuenta__bloque">
-            <label><strong>Código de referido</strong></label>
+            <label>
+              <strong>Código de referido</strong>
+            </label>
             <div className="panel-cuenta__ref">
               <input readOnly value={codigo} />
-              <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
+              <button
+                className="btn secundario"
+                type="button"
+                onClick={copyCode}
+              >
+                Copiar
+              </button>
             </div>
-            <small className="pista">Compartí este código para ganar puntos.</small>
+            <small className="pista">
+              Compartí este código para ganar puntos.
+            </small>
           </div>
 
           <div className="panel-cuenta__bloque">
-            <p><strong>Puntos LevelUp:</strong> <span>{puntos}</span></p>
-            <p><strong>Nivel:</strong> <span>{nivel}</span></p>
-            <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
+            <p>
+              <strong>Puntos LevelUp:</strong> <span>{puntos}</span>
+            </p>
+            <p>
+              <strong>Nivel:</strong> <span>{nivel}</span>
+            </p>
+            <small className="pista">
+              Bronce: 0–199 · Plata: 200–499 · Oro: 500+
+            </small>
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
+            <a className="btn secundario" href="/cliente/misCompras.html">
+              Mis compras
+            </a>
             <button
               id="btnSalirCuenta"
               className="btn"
-              onClick={() => {
-                localStorage.removeItem("sesion");
-                window.location.href = "/cliente/index.html";
-              }}
+              onClick={handleLogout}
             >
               Salir
             </button>
@@ -183,10 +231,11 @@ function AccountPanel({ user, open, onClose }) {
 }
 
 export default function NuevoUsuarioPanel() {
-  const [user, setUser] = useState(null);
+  const { user, isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [msg, setMsg] = useState("");
   const [form, setForm] = useState({
     run: "",
     nombres: "",
@@ -194,48 +243,61 @@ export default function NuevoUsuarioPanel() {
     correo: "",
     tipoUsuario: "cliente",
     direccion: "",
-    pass: "",
+    password: "",
   });
-  const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
+    if (!isAuthenticated || !user) {
       alert("Acceso restringido.");
-      window.location.href = "/index.html";
+      window.location.href = "/cliente/";
       return;
     }
-    if (u.tipoUsuario !== "admin") {
+
+    const esAdmin =
+      user.tipo === "ADMIN" ||
+      user.tipo === "admin" ||
+      user.tipoUsuario === "ADMIN" ||
+      user.tipoUsuario === "admin";
+
+    if (!esAdmin) {
       alert("Solo administradores pueden crear usuarios.");
       window.location.href = "/admin";
       return;
     }
-    setUser(u);
-    setIsAdmin(u.tipoUsuario === "admin");
-  }, []);
+
+    setIsAdmin(esAdmin);
+  }, [isAuthenticated, user]);
 
   if (!user) return null;
 
-  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const onChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    const lista = Array.isArray(obtener("usuarios", [])) ? obtener("usuarios", []) : [];
+    setMsg("");
 
-    // Validación: RUN único
-    if (lista.some((x) => String(x.run).trim() === String(form.run).trim())) {
-      setMsg("Ya existe un usuario con ese RUN.");
-      return;
+    try {
+      const payload = {
+        run: form.run.trim(),
+        nombres: form.nombres.trim(),
+        apellidos: form.apellidos.trim(),
+        correo: form.correo.trim(),
+        direccion: form.direccion.trim(),
+        tipoUsuario: form.tipoUsuario.toUpperCase(), // CLIENTE / VENDEDOR / ADMIN
+        password: form.password || null,
+      };
+
+      await usuariosAPI.create(payload);
+      setMsg("Usuario guardado correctamente en backend.");
+      setTimeout(() => {
+        window.location.href = "/admin/usuarios";
+      }, 600);
+    } catch (err) {
+      setMsg(
+        "No se pudo crear el usuario. Revisa el backend (RUN/correo duplicado, etc.)."
+      );
     }
-
-    lista.push({
-      ...form,
-      fechaRegistro: new Date().toISOString(),
-    });
-
-    guardar("usuarios", lista);
-    setMsg("Usuario guardado correctamente.");
-    setTimeout(() => (window.location.href = "/admin/usuarios"), 600);
   };
 
   return (
@@ -248,7 +310,6 @@ export default function NuevoUsuarioPanel() {
       <SideMenu
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        isAdmin={isAdmin}
         onOpenAccount={() => setAccountOpen(true)}
       />
 
@@ -256,7 +317,11 @@ export default function NuevoUsuarioPanel() {
         <aside className="menu-admin">
           <a href="/admin">Inicio</a>
           <a href="/admin/productos">Productos</a>
-          {isAdmin && <a href="/admin/usuarios" className="activo">Usuarios</a>}
+          {isAdmin && (
+            <a href="/admin/usuarios" className="activo">
+              Usuarios
+            </a>
+          )}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
           <a href="/admin/boleta">Boletas</a>
@@ -268,27 +333,62 @@ export default function NuevoUsuarioPanel() {
           <form className="formulario" onSubmit={onSubmit} noValidate>
             <div className="fila">
               <label htmlFor="run">RUN</label>
-              <input id="run" name="run" maxLength={9} required value={form.run} onChange={onChange} />
+              <input
+                id="run"
+                name="run"
+                maxLength={9}
+                required
+                value={form.run}
+                onChange={onChange}
+              />
             </div>
 
             <div className="fila">
               <label htmlFor="nombres">Nombres</label>
-              <input id="nombres" name="nombres" maxLength={50} required value={form.nombres} onChange={onChange} />
+              <input
+                id="nombres"
+                name="nombres"
+                maxLength={50}
+                required
+                value={form.nombres}
+                onChange={onChange}
+              />
             </div>
 
             <div className="fila">
               <label htmlFor="apellidos">Apellidos</label>
-              <input id="apellidos" name="apellidos" maxLength={100} required value={form.apellidos} onChange={onChange} />
+              <input
+                id="apellidos"
+                name="apellidos"
+                maxLength={100}
+                required
+                value={form.apellidos}
+                onChange={onChange}
+              />
             </div>
 
             <div className="fila">
               <label htmlFor="correo">Correo</label>
-              <input id="correo" name="correo" type="email" maxLength={100} required value={form.correo} onChange={onChange} />
+              <input
+                id="correo"
+                name="correo"
+                type="email"
+                maxLength={100}
+                required
+                value={form.correo}
+                onChange={onChange}
+              />
             </div>
 
             <div className="fila">
               <label htmlFor="tipoUsuario">Tipo de Usuario</label>
-              <select id="tipoUsuario" name="tipoUsuario" required value={form.tipoUsuario} onChange={onChange}>
+              <select
+                id="tipoUsuario"
+                name="tipoUsuario"
+                required
+                value={form.tipoUsuario}
+                onChange={onChange}
+              >
                 <option value="cliente">Cliente</option>
                 <option value="vendedor">Vendedor</option>
                 <option value="admin">Administrador</option>
@@ -297,11 +397,37 @@ export default function NuevoUsuarioPanel() {
 
             <div className="fila">
               <label htmlFor="direccion">Dirección</label>
-              <input id="direccion" name="direccion" maxLength={300} required value={form.direccion} onChange={onChange} />
+              <input
+                id="direccion"
+                name="direccion"
+                maxLength={300}
+                required
+                value={form.direccion}
+                onChange={onChange}
+              />
             </div>
 
-            <button className="btn primario" type="submit">Guardar</button>
-            {msg && <p className="exito" style={{ marginTop: 8 }}>{msg}</p>}
+            <div className="fila">
+              <label htmlFor="password">Contraseña</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                maxLength={100}
+                required
+                value={form.password}
+                onChange={onChange}
+              />
+            </div>
+
+            <button className="btn primario" type="submit">
+              Guardar
+            </button>
+            {msg && (
+              <p className="exito" style={{ marginTop: 8 }}>
+                {msg}
+              </p>
+            )}
           </form>
         </div>
       </section>
@@ -310,7 +436,11 @@ export default function NuevoUsuarioPanel() {
         <p>© 2025 Level-Up Gamer — Chile</p>
       </footer>
 
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel
+        user={user}
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
     </div>
   );
 }

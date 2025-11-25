@@ -1,4 +1,6 @@
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext.jsx";
 import AdminPanel from "./components/Dashboard/AdminPanel.jsx";
 import ProductosPanel from "./components/Productos/ProductosPanel.jsx";
 import NuevoProductoPanel from "./components/Productos/NuevoProductoPanel.jsx";
@@ -27,12 +29,29 @@ function NotFound() {
   );
 }
 
+// Componente para redirigir al cliente estático
+function RedirectToClient() {
+  React.useEffect(() => {
+    // Redirigir a la página HTML estática completa
+    window.location.replace('/cliente/index.html');
+  }, []);
+  
+  return (
+    <div style={{ padding: 24, textAlign: 'center' }}>
+      <h2>Level-Up Gamer</h2>
+      <p>Redirigiendo a la tienda...</p>
+      <p><a href="/cliente/index.html">Si no se redirige automáticamente, haz clic aquí</a></p>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* redirección inicial */}
-        <Route path="/" element={<Navigate to="/admin" replace />} />
+      <AuthProvider>
+        <Routes>
+        {/* Redirección al cliente HTML estático */}
+        <Route path="/" element={<RedirectToClient />} />
 
         {/* Dashboard principal */}
         <Route
@@ -205,7 +224,8 @@ export default function App() {
 
         {/* fallback */}
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

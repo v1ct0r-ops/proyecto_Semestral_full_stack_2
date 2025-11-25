@@ -1,56 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { obtener, usuarioActual } from "../../utils/storage";
+// src/components/boleta/DetalleBoleta.jsx
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { usuarioActual } from "../../utils/storage";
+import { pedidosAPI, boletasAPI, obtenerProductos } from "../../services/apiService";
 
 // ===== Helpers =====
 const CLP = (n) =>
   typeof n === "number"
     ? n.toLocaleString("es-CL", {
-        style: "currency", 
-        currency: "CLP", 
+        style: "currency",
+        currency: "CLP",
         maximumFractionDigits: 0,
       })
     : "—";
 
-const fechaHoraLarga = (ts) => {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  return d.toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit", 
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-};
-
 const calcularNivel = (p) => (p >= 500 ? "Oro" : p >= 200 ? "Plata" : "Bronce");
 
-// ===== Hook de sesión =====
-function useSessionData() {
-  const [user, setUser] = useState(null);
-  const [pedidos, setPedidos] = useState([]);
-  const [boletas, setBoletas] = useState([]);
-  const [productos, setProductos] = useState([]);
-
-  useEffect(() => {
-    const u = usuarioActual();
-    if (!u) {
-      alert("Acceso restringido.");
-      window.location.href = "/index.html";
-      return;
-    }
-    setUser(u);
-    setPedidos(Array.isArray(obtener("pedidos", [])) ? obtener("pedidos", []) : []);
-    setBoletas(Array.isArray(obtener("boletas", [])) ? obtener("boletas", []) : []);
-    setProductos(Array.isArray(obtener("productos", [])) ? obtener("productos", []) : []);
-  }, []);
-
-  return { user, pedidos, boletas, productos };
-}
-
-// ===== Components Header/SideMenu/AccountPanel =====
+// ===== Header / SideMenu / AccountPanel =====
 function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
   return (
     <header className="encabezado">
@@ -67,8 +33,12 @@ function Header({ onOpenAccount, onToggleMenu, isMenuOpen }) {
         aria-controls="menuLateral"
         onClick={onToggleMenu}
       >
-        <span className="icono-menu" aria-hidden="true">☰</span>
-        <span className="icono-cerrar" aria-hidden="true">✕</span>
+        <span className="icono-menu" aria-hidden="true">
+          ☰
+        </span>
+        <span className="icono-cerrar" aria-hidden="true">
+          ✕
+        </span>
       </button>
 
       <nav className="navegacion">
@@ -101,7 +71,8 @@ function SideMenu({ open, onClose, onOpenAccount }) {
         <div className="menu-cabecera">
           <a className="logo" href="/admin">
             <span className="marca">
-              LEVEL<span className="up">UP</span> <span className="gamer">GAMER</span>
+              LEVEL<span className="up">UP</span>{" "}
+              <span className="gamer">GAMER</span>
             </span>
           </a>
         </div>
@@ -119,8 +90,12 @@ function SideMenu({ open, onClose, onOpenAccount }) {
           >
             Mi cuenta
           </a>
-          <a href="/cliente/index.html" onClick={onClose}>Inicio</a>
-          <a href="/cliente/productos.html" onClick={onClose}>Productos</a>
+          <a href="/cliente/index.html" onClick={onClose}>
+            Inicio
+          </a>
+          <a href="/cliente/productos.html" onClick={onClose}>
+            Productos
+          </a>
           <a
             href="/index.html"
             id="linkSalirMov"
@@ -183,27 +158,44 @@ function AccountPanel({ user, open, onClose }) {
             <img src="/img/imgPerfil.png" alt="Foto de perfil" />
           </div>
 
-          <p><strong>Nombre:</strong> {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}</p>
-          <p><strong>Correo:</strong> {user?.correo || "—"}</p>
-          <a className="btn secundario" href="/cliente/perfil.html">Editar Perfil</a>
+          <p>
+            <strong>Nombre:</strong>{" "}
+            {`${user?.nombres || ""} ${user?.apellidos || ""}`.trim() || "—"}
+          </p>
+          <p>
+            <strong>Correo:</strong> {user?.correo || "—"}
+          </p>
+          <a className="btn secundario" href="/cliente/perfil.html">
+            Editar Perfil
+          </a>
 
           <div className="panel-cuenta__bloque">
-            <label><strong>Código de referido</strong></label>
+            <label>
+              <strong>Código de referido</strong>
+            </label>
             <div className="panel-cuenta__ref">
               <input readOnly value={codigo} />
-              <button className="btn secundario" type="button" onClick={copyCode}>Copiar</button>
+              <button className="btn secundario" type="button" onClick={copyCode}>
+                Copiar
+              </button>
             </div>
             <small className="pista">Compartí este código para ganar puntos.</small>
           </div>
 
           <div className="panel-cuenta__bloque">
-            <p><strong>Puntos LevelUp:</strong> <span>{puntos}</span></p>
-            <p><strong>Nivel:</strong> <span>{nivel}</span></p>
+            <p>
+              <strong>Puntos LevelUp:</strong> <span>{puntos}</span>
+            </p>
+            <p>
+              <strong>Nivel:</strong> <span>{nivel}</span>
+            </p>
             <small className="pista">Bronce: 0–199 · Plata: 200–499 · Oro: 500+</small>
           </div>
 
           <div className="panel-cuenta__acciones">
-            <a className="btn secundario" href="/cliente/misCompras.html">Mis compras</a>
+            <a className="btn secundario" href="/cliente/misCompras.html">
+              Mis compras
+            </a>
             <button
               id="btnSalirCuenta"
               className="btn"
@@ -223,104 +215,156 @@ function AccountPanel({ user, open, onClose }) {
   );
 }
 
+// ===== Página DetalleBoleta (100% backend) =====
 const DetalleBoleta = () => {
   const { numero } = useParams();
   const navigate = useNavigate();
-  const { user, pedidos, boletas, productos } = useSessionData();
-  
+
+  // --- Hooks SIEMPRE en el mismo orden ---
+  const [user, setUser] = useState(null);
+  const [boleta, setBoleta] = useState(null);
+  const [pedido, setPedido] = useState(null);
+  const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
-  // Buscar la boleta y el pedido relacionado
-  const boleta = useMemo(() => {
-    if (!Array.isArray(boletas) || !numero) return null;
-    return boletas.find(b => b.numero === decodeURIComponent(numero));
-  }, [boletas, numero]);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const u = await usuarioActual();
+        if (!u) {
+          alert("Acceso restringido.");
+          window.location.href = "/index.html";
+          return;
+        }
+        setUser(u);
 
-  const pedido = useMemo(() => {
-    if (!boleta || !Array.isArray(pedidos)) return null;
-    return pedidos.find(p => p.id === boleta.pedidoId);
-  }, [boleta, pedidos]);
+        const plainNumero = decodeURIComponent(numero || "");
 
-  // Items del pedido enriquecidos con información del producto
-  const items = useMemo(() => {
-    if (!pedido || !Array.isArray(productos)) return [];
-    return (pedido.items || []).map(item => {
-      const producto = productos.find(p => p.codigo === item.codigo);
-      return {
-        ...item,
-        nombre: producto?.nombre || item.codigo || "Producto no encontrado"
-      };
-    });
-  }, [pedido, productos]);
+        // 1) Boleta desde backend
+        const boletaData = await boletasAPI.getByNumero(plainNumero);
+        setBoleta(boletaData || null);
 
-  // Datos del cliente para mostrar en la boleta (deben estar antes de los cálculos de descuento)
-  const comprador = pedido?.comprador || pedido?.usuario || pedido?.cliente || {};
-  const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${comprador.apellidos || comprador.apellido || ""}`.trim();
-  const correo = comprador.correo || comprador.email || "—";
+        // 2) Pedido asociado
+        if (boletaData) {
+          const pedidoId = boletaData.pedido?.id ?? boletaData.pedidoId;
+          if (pedidoId) {
+            const pedidoData = await pedidosAPI.getById(pedidoId);
+            setPedido(pedidoData || null);
+          }
+        }
 
-  // === Descuentos: usar mismas reglas que cliente ===
-  const VALOR_PUNTO = 10; // 1 punto = $10 CLP
-  const TOPE_DESC_POR_PUNTOS = 0.20; // máximo 20% del subtotal
+        // 3) Productos
+        const productosData = await obtenerProductos();
+        setProductos(Array.isArray(productosData) ? productosData : []);
 
-  // Obtener puntos disponibles del comprador (si existe en usuarioActual global)
-  const puntosComprador = (() => {
-    try {
-      // comprador puede venir como objeto embebido (comprador) o como referencia a usuario
-      const u = comprador && comprador.correo
-        ? (Array.isArray(obtener("usuarios")) ? obtener("usuarios").find(x => x.correo?.toLowerCase() === (comprador.correo||"").toLowerCase()) : null)
-        : null;
-      return (u && Number(u.puntosLevelUp)) ? Number(u.puntosLevelUp) : 0;
-    } catch { return 0; }
-  })();
+        setLoading(false);
+      } catch (err) {
+        setError(err.message || "Error al cargar boleta");
+        setLoading(false);
+      }
+    };
 
-  // subtotal numeric
-  const subtotalNum = (items || []).reduce((s, it) => s + (Number(it.precio || 0) * Number(it.cantidad || 1)), 0);
-
-  // DUOC discount (client code: precioConDescuento uses 20% off for duoc emails)
-  const aplicaDuoc = (comprador && (comprador.correo || "").toLowerCase().endsWith("@duoc.cl"));
-  const descuentoDuocNum = aplicaDuoc ? Math.round(subtotalNum * 0.20) : 0;
-
-  // Descuento por puntos: puntos * VALOR_PUNTO, capped at TOPE_DESC_POR_PUNTOS * subtotal
-  const valorPuntosDisponibles = Math.max(0, puntosComprador * VALOR_PUNTO);
-  const maxPorPuntos = Math.round(subtotalNum * TOPE_DESC_POR_PUNTOS);
-  const descuentoPuntosNum = Math.min(valorPuntosDisponibles, maxPorPuntos);
-
-  const totalNum = subtotalNum - descuentoDuocNum - descuentoPuntosNum;
+    loadData();
+  }, [numero]);
 
   useEffect(() => {
     document.body.classList.toggle("menu-abierto", menuOpen);
     return () => document.body.classList.remove("menu-abierto");
   }, [menuOpen]);
 
-  if (!user) return null;
+  // Items enriquecidos (hook, debe estar SIEMPRE arriba, nunca dentro de if)
+  const items = useMemo(() => {
+    if (!pedido || !Array.isArray(pedido.items)) return [];
+    return pedido.items.map((item) => {
+      const producto = Array.isArray(productos)
+        ? productos.find(
+            (p) =>
+              p.codigo === item.codigo ||
+              p.codigo === item.producto?.codigo
+          )
+        : null;
 
-  const isAdmin = user?.tipoUsuario === "admin";
+      return {
+        ...item,
+        codigo: item.codigo || item.producto?.codigo,
+        nombre:
+          producto?.nombre ||
+          item.producto?.nombre ||
+          item.codigo ||
+          "Producto no encontrado",
+        precio: item.precio || item.precioUnitario || 0,
+        cantidad: item.cantidad || 1,
+      };
+    });
+  }, [pedido, productos]);
 
+  // Datos del cliente
+  const comprador = pedido?.comprador || pedido?.usuario || pedido?.cliente || {};
+  const nombreCompleto = `${comprador.nombres || comprador.nombre || ""} ${
+    comprador.apellidos || comprador.apellido || ""
+  }`.trim();
+  const correo = comprador.correo || comprador.email || "—";
+
+  // Rol del usuario logueado
+  const tipo = (user?.tipoUsuario ?? user?.tipo ?? "")
+    .toString()
+    .trim()
+    .toUpperCase();
+  const isAdmin = tipo === "ADMIN";
+  const canSeeBoletas = tipo === "ADMIN" || tipo === "VENDEDOR";
+
+  // Subtotales y descuentos (si todavía no los calculas en backend)
+  const VALOR_PUNTO = 10;
+  const TOPE_DESC_POR_PUNTOS = 0.2;
+
+  const subtotalNum = (items || []).reduce(
+    (s, it) => s + Number(it.precio || 0) * Number(it.cantidad || 1),
+    0
+  );
+
+  const aplicaDuoc = (comprador && (comprador.correo || "").toLowerCase().endsWith("@duoc.cl"));
+  const descuentoDuocNum = aplicaDuoc ? Math.round(subtotalNum * 0.2) : 0;
+
+  const puntosComprador = 0; // si luego quieres, lo traes desde backend
+  const valorPuntosDisponibles = Math.max(0, puntosComprador * VALOR_PUNTO);
+  const maxPorPuntos = Math.round(subtotalNum * TOPE_DESC_POR_PUNTOS);
+  const descuentoPuntosNum = Math.min(valorPuntosDisponibles, maxPorPuntos);
+
+  const totalNum =
+    typeof boleta?.totalNumerico === "number"
+      ? boleta.totalNumerico
+      : subtotalNum - descuentoDuocNum - descuentoPuntosNum;
 
   const imprimirBoleta = () => {
     if (!boleta) return;
 
-    // Prefer pedido fecha if available, else use boleta.fecha or now
-    const fechaStr = pedido?.fecha
-      ? new Date(pedido.fecha).toLocaleString("es-CL")
-      : (boleta.fecha || new Date().toLocaleString("es-CL"));
+    const fechaStr =
+      pedido?.fecha || boleta.fecha || boleta.fechaEmision
+        ? new Date(pedido?.fecha || boleta.fecha || boleta.fechaEmision).toLocaleString(
+            "es-CL"
+          )
+        : new Date().toLocaleString("es-CL");
 
-    // Build rows and compute numeric subtotal
     let subtotalLocal = 0;
-    const filas = (items || []).map(it => {
-      const precioNum = Number(it.precio || 0);
-      const cantidad = Number(it.cantidad || 1);
-      const sub = precioNum * cantidad;
-      subtotalLocal += sub;
-      return `
-            <tr>
-              <td>${it.nombre}<br><small>${it.codigo || ''}</small></td>
-              <td style="text-align:right">${CLP(precioNum)}</td>
-              <td style="text-align:center">x${cantidad}</td>
-              <td style="text-align:right">${CLP(sub)}</td>
-            </tr>`;
-    }).join("");
+    const filas = (items || [])
+      .map((it) => {
+        const precioNum = Number(it.precio || 0);
+        const cantidad = Number(it.cantidad || 1);
+        const sub = precioNum * cantidad;
+        subtotalLocal += sub;
+        return `
+          <tr>
+            <td>${it.nombre}<br><small>${it.codigo || ""}</small></td>
+            <td style="text-align:right">${CLP(precioNum)}</td>
+            <td style="text-align:center">x${cantidad}</td>
+            <td style="text-align:right">${CLP(sub)}</td>
+          </tr>`;
+      })
+      .join("");
 
     const pedidoId = pedido?.id || boleta.pedidoId || boleta.numero || "--";
 
@@ -348,7 +392,9 @@ const DetalleBoleta = () => {
       <div class="small">Boleta electrónica</div>
       <div class="small">Pedido: ${pedidoId}</div>
       <div class="small">Fecha: ${fechaStr}</div>
-      <div class="small">Cliente: ${nombreCompleto || boleta.cliente || "—"} ${correo !== '—' ? '— ' + correo : ''}</div>
+      <div class="small">Cliente: ${nombreCompleto || boleta.cliente || "—"} ${
+      correo !== "—" ? "— " + correo : ""
+    }</div>
     </div>
     <div class="icon">📄</div>
   </div>
@@ -369,9 +415,13 @@ const DetalleBoleta = () => {
 
   <div class="descuentos">
     <div><strong>Subtotal:</strong> ${CLP(subtotalLocal)}</div>
-    ${descuentoDuocNum > 0 ? `<div>Descuento DUOC: -${CLP(descuentoDuocNum)}</div>` : ''}
-    ${descuentoPuntosNum > 0 ? `<div>Descuento Puntos: -${CLP(descuentoPuntosNum)} (${puntosComprador} pts)</div>` : ''}
-    <div style="margin-top:8px"><strong>Total:</strong> ${CLP(Math.max(0, subtotalLocal - descuentoDuocNum - descuentoPuntosNum))}</div>
+    ${descuentoDuocNum > 0 ? `<div>Descuento DUOC: -${CLP(descuentoDuocNum)}</div>` : ""}
+    ${descuentoPuntosNum > 0 ? `<div>Descuento Puntos: -${CLP(
+      descuentoPuntosNum
+    )} (${puntosComprador} pts)</div>` : ""}
+    <div style="margin-top:8px"><strong>Total:</strong> ${CLP(
+      Math.max(0, subtotalLocal - descuentoDuocNum - descuentoPuntosNum)
+    )}</div>
   </div>
 
   <script>window.onload = () => window.print();</script>
@@ -379,7 +429,12 @@ const DetalleBoleta = () => {
 </html>`.trim();
 
     const w = window.open("", "_blank");
-    if (!w){ alert("Bloqueado por el navegador. Permití ventanas emergentes para generar el PDF."); return; }
+    if (!w) {
+      alert(
+        "Bloqueado por el navegador. Permití ventanas emergentes para generar el PDF."
+      );
+      return;
+    }
     w.document.open();
     w.document.write(html);
     w.document.close();
@@ -407,20 +462,44 @@ const DetalleBoleta = () => {
           {isAdmin && <a href="/admin/usuarios">Usuarios</a>}
           <a href="/admin/pedidos">Pedidos</a>
           <a href="/admin/solicitud">Solicitudes</a>
-          <a href="/admin/boleta" className="activo">Boletas</a>
+          {canSeeBoletas && (
+            <a href="/admin/boleta" className="activo">
+              Boletas
+            </a>
+          )}
           <a href="/admin/reportes">Reportes</a>
         </aside>
 
-        {/* Panel principal */}
         <div className="panel">
           <h1>Detalle de Boleta</h1>
 
-          {!boleta ? (
+          {loading ? (
+            <p className="info">🔄 Cargando boleta desde el backend...</p>
+          ) : error ? (
+            <div className="tarjeta">
+              <div className="contenido">
+                <p className="info" style={{ color: "#dc2626" }}>
+                  ❌ Error: {error}
+                </p>
+                <div className="acciones" style={{ marginTop: 8 }}>
+                  <button
+                    className="btn secundario"
+                    onClick={() => navigate("/admin/boleta")}
+                  >
+                    Volver a Boletas
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : !boleta ? (
             <div className="tarjeta">
               <div className="contenido">
                 <p className="info">Boleta no encontrada.</p>
                 <div className="acciones" style={{ marginTop: 8 }}>
-                  <button className="btn secundario" onClick={() => navigate("/admin/boleta")}>
+                  <button
+                    className="btn secundario"
+                    onClick={() => navigate("/admin/boleta")}
+                  >
                     Volver a Boletas
                   </button>
                 </div>
@@ -434,66 +513,93 @@ const DetalleBoleta = () => {
                   <h2 style={{ marginTop: 0, color: "var(--azul)" }}>
                     Boleta {boleta.numero}
                   </h2>
-                  
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: 16,
+                      marginBottom: 16,
+                    }}
+                  >
                     <div>
-                      <p><strong>Fecha de Emisión:</strong></p>
-                      <p>{boleta.fecha}</p>
+                      <p>
+                        <strong>Fecha de Emisión:</strong>
+                      </p>
+                      <p>{boleta.fecha || boleta.fechaEmision || "—"}</p>
                     </div>
                     <div>
-                      <p><strong>Cliente:</strong></p>
-                      <p>{boleta.cliente}</p>
-                      {correo !== "—" && <p><small>{correo}</small></p>}
+                      <p>
+                        <strong>Cliente:</strong>
+                      </p>
+                      <p>{boleta.cliente || nombreCompleto || "—"}</p>
+                      {correo !== "—" && (
+                        <p>
+                          <small>{correo}</small>
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <p><strong>Pedido Relacionado:</strong></p>
-                      <p>{boleta.pedidoId}</p>
+                      <p>
+                        <strong>Pedido Relacionado:</strong>
+                      </p>
+                      <p>{boleta.pedidoId || pedido?.id || "—"}</p>
                     </div>
                     <div>
-                      <p><strong>Subtotal:</strong></p>
+                      <p>
+                        <strong>Subtotal:</strong>
+                      </p>
                       <p>{CLP(subtotalNum)}</p>
                     </div>
                     <div>
-                      <p><strong>Descuentos:</strong></p>
+                      <p>
+                        <strong>Descuentos:</strong></p>
                       <div style={{ fontSize: "0.95em" }}>
                         {descuentoDuocNum > 0 && (
                           <div>Descuento DUOC: -{CLP(descuentoDuocNum)}</div>
                         )}
                         {descuentoPuntosNum > 0 && (
-                          <div>Descuento Puntos: -{CLP(descuentoPuntosNum)} <small>({puntosComprador} pts)</small></div>
+                          <div>
+                            Descuento Puntos: -{CLP(descuentoPuntosNum)}{" "}
+                            <small>({puntosComprador} pts)</small>
+                          </div>
                         )}
                         {descuentoDuocNum === 0 && descuentoPuntosNum === 0 && (
-                          <div><small>Sin descuentos aplicables</small></div>
+                          <div>
+                            <small>Sin descuentos aplicables</small>
+                          </div>
                         )}
                       </div>
-                      <p style={{ marginTop: 8 }}><strong>Total:</strong></p>
-                      <p style={{ fontSize: "1.2em", color: "var(--verde)" }}>{CLP(totalNum)}</p>
+                      <p style={{ marginTop: 8 }}>
+                        <strong>Total:</strong>
+                      </p>
+                      <p style={{ fontSize: "1.2em", color: "var(--verde)" }}>
+                        {CLP(totalNum)}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Acciones */}
                   <div className="acciones" style={{ gap: 8 }}>
-                    <button 
-                      className="btn secundario" 
+                    <button
+                      className="btn secundario"
                       onClick={() => navigate("/admin/boleta")}
                     >
                       Volver a Boletas
                     </button>
                     {pedido && (
-                      <button 
-                        className="btn secundario" 
+                      <button
+                        className="btn secundario"
                         onClick={() => {
-                          const pedidoId = encodeURIComponent(String(pedido.id).replace(/^PED-?/i, ""));
+                          const pedidoId = encodeURIComponent(
+                            String(pedido.id).replace(/^PED-?/i, "")
+                          );
                           navigate(`/admin/pedidos/${pedidoId}`);
                         }}
                       >
                         Ver Pedido
                       </button>
                     )}
-                    <button 
-                      className="btn exito" 
-                      onClick={imprimirBoleta}
-                    >
+                    <button className="btn exito" onClick={imprimirBoleta}>
                       Imprimir Boleta
                     </button>
                   </div>
@@ -505,7 +611,7 @@ const DetalleBoleta = () => {
                 <div className="tarjeta">
                   <div className="contenido">
                     <h3>Detalle de Productos</h3>
-                    
+
                     <div style={{ overflowX: "auto" }}>
                       <table className="tabla" style={{ width: "100%", marginTop: 12 }}>
                         <thead>
@@ -521,18 +627,29 @@ const DetalleBoleta = () => {
                           {items.map((item, index) => (
                             <tr key={index}>
                               <td>{item.nombre}</td>
-                              <td><small>{item.codigo}</small></td>
+                              <td>
+                                <small>{item.codigo}</small>
+                              </td>
                               <td>{CLP(item.precio || 0)}</td>
                               <td>{item.cantidad || 1}</td>
-                              <td>{CLP((item.precio || 0) * (item.cantidad || 1))}</td>
+                              <td>
+                                {CLP((item.precio || 0) * (item.cantidad || 1))}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                         <tfoot>
-                          <tr style={{ borderTop: "2px solid var(--borde)", fontWeight: "bold" }}>
-                              <td colSpan="4">TOTAL</td>
-                              <td style={{ color: "var(--verde)" }}>{CLP(totalNum)}</td>
-                            </tr>
+                          <tr
+                            style={{
+                              borderTop: "2px solid var(--borde)",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            <td colSpan="4">TOTAL</td>
+                            <td style={{ color: "var(--verde)" }}>
+                              {CLP(totalNum)}
+                            </td>
+                          </tr>
                         </tfoot>
                       </table>
                     </div>
@@ -548,8 +665,11 @@ const DetalleBoleta = () => {
         <p>© 2025 Level-Up Gamer — Chile</p>
       </footer>
 
-      {/* Panel de cuenta + cortina */}
-      <AccountPanel user={user} open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountPanel
+        user={user}
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
     </div>
   );
 };
