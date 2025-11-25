@@ -1,0 +1,16 @@
+spring:
+  # DataSource configuration handled by DatabaseConfig.java
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  main:
+    lazy-initialization: false
+
+server:
+  port: ${PORT:8080}
+
+logging:
+  level:
+    root: WARN
+    '[cl.duoc.levelup]': INFO

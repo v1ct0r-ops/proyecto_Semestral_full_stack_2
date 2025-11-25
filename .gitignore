@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java/Spring Boot
+backend-spring/target/
+backend-spring/.mvn/
+backend-spring/mvnw
+backend-spring/mvnw.cmd
+*.jar
+*.war
+*.ear
+*.class
+
+# H2 database (no versionar archivos de base de datos)
+backend-spring/data/*.mv.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+.npm/
+.eslintcache
+
+# Coverage reports
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
